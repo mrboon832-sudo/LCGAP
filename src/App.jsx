@@ -1,39 +1,41 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './services/firebase';
 import { getUserProfile } from './services/api';
 import featureFlags from './config/featureFlags';
 
-// Components
-import Header from './components/Layout/Header';
-import LandingPage from './components/Home/LandingPage';
-import Login from './components/Auth/Login';
-import Signup from './components/Auth/Signup';
-import VerifyEmailNotice from './components/Auth/VerifyEmailNotice';
-import AdminDashboard from './components/Dashboard/AdminDashboard';
-import StudentDashboard from './components/Dashboard/StudentDashboard';
-import InstituteDashboard from './components/Dashboard/InstituteDashboard';
-import CompanyDashboard from './components/Dashboard/CompanyDashboard';
-import InstitutionList from './components/Institutions/InstitutionList';
-import InstitutionProfile from './components/Institutions/InstitutionProfile';
-import ManageFaculties from './components/Institutions/ManageFaculties';
-import ManageCourses from './components/Institutions/ManageCourses';
-import ManageInstitution from './components/Institutions/ManageInstitution';
-import JobsPage from './components/Jobs/JobsPage';
-import JobDetails from './components/Jobs/JobDetails';
-import JobApplyForm from './components/Jobs/JobApplyForm';
-import ManageJobs from './components/Jobs/ManageJobs';
-import ApplicationsPage from './components/Applications/ApplicationsPage';
-import ApplicantsPage from './components/Company/ApplicantsPage';
-import StudentProfile from './components/Profile/StudentProfile';
-import ViewProfile from './components/Profile/ViewProfile';
-
 // Styles
 import './styles/base.css';
 import './styles/header.css';
 import './styles/forms.css';
 import './styles/themes.css';
+
+// Critical components (loaded immediately)
+import Header from './components/Layout/Header';
+import LandingPage from './components/Home/LandingPage';
+import Login from './components/Auth/Login';
+import Signup from './components/Auth/Signup';
+
+// Lazy-loaded components (loaded on demand)
+const VerifyEmailNotice = lazy(() => import('./components/Auth/VerifyEmailNotice'));
+const AdminDashboard = lazy(() => import('./components/Dashboard/AdminDashboard'));
+const StudentDashboard = lazy(() => import('./components/Dashboard/StudentDashboard'));
+const InstituteDashboard = lazy(() => import('./components/Dashboard/InstituteDashboard'));
+const CompanyDashboard = lazy(() => import('./components/Dashboard/CompanyDashboard'));
+const InstitutionList = lazy(() => import('./components/Institutions/InstitutionList'));
+const InstitutionProfile = lazy(() => import('./components/Institutions/InstitutionProfile'));
+const ManageFaculties = lazy(() => import('./components/Institutions/ManageFaculties'));
+const ManageCourses = lazy(() => import('./components/Institutions/ManageCourses'));
+const ManageInstitution = lazy(() => import('./components/Institutions/ManageInstitution'));
+const JobsPage = lazy(() => import('./components/Jobs/JobsPage'));
+const JobDetails = lazy(() => import('./components/Jobs/JobDetails'));
+const JobApplyForm = lazy(() => import('./components/Jobs/JobApplyForm'));
+const ManageJobs = lazy(() => import('./components/Jobs/ManageJobs'));
+const ApplicationsPage = lazy(() => import('./components/Applications/ApplicationsPage'));
+const ApplicantsPage = lazy(() => import('./components/Company/ApplicantsPage'));
+const StudentProfile = lazy(() => import('./components/Profile/StudentProfile'));
+const ViewProfile = lazy(() => import('./components/Profile/ViewProfile'));
 
 // Protected Route Component
 const ProtectedRoute = ({ children, user, requireVerified = false }) => {
@@ -89,18 +91,28 @@ function App() {
     }
   };
 
+  // Loading fallback component
+  const LoadingFallback = () => (
+    <div className="container" style={{ 
+      display: 'flex', 
+      justifyContent: 'center', 
+      alignItems: 'center', 
+      minHeight: '60vh',
+      flexDirection: 'column',
+      gap: '1rem'
+    }}>
+      <div className="spinner"></div>
+      <p className="loading-text">Loading...</p>
+    </div>
+  );
+
   if (loading) {
-    return (
-      <div className="container">
-        <div className="spinner"></div>
-        <p className="loading-text">Loading...</p>
-      </div>
-    );
+    return <LoadingFallback />;
   }
 
   const DashboardRouter = () => {
     if (!userProfile) {
-      return <div className="container"><p>Loading profile...</p></div>;
+      return <LoadingFallback />;
     }
 
     switch (userProfile.role) {
@@ -119,6 +131,7 @@ function App() {
 
   return (
     <Router>
+      <Suspense fallback={<LoadingFallback />}>
       <Routes>
         {/* Public routes */}
         <Route
@@ -342,6 +355,7 @@ function App() {
           }
         />
       </Routes>
+      </Suspense>
     </Router>
   );
 }

@@ -45,8 +45,12 @@ export const createInstitution = async (data) => {
   return instRef.id;
 };
 
-export const getInstitutions = async () => {
-  const q = query(collection(db, 'institutions'), orderBy('name'));
+export const getInstitutions = async (limitCount = 50) => {
+  const q = query(
+    collection(db, 'institutions'), 
+    orderBy('name'),
+    limit(limitCount)
+  );
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
@@ -331,7 +335,11 @@ export const createJob = async (companyId, data) => {
 };
 
 export const getJobs = async (filters = {}) => {
-  let q = query(collection(db, 'jobs'), orderBy('createdAt', 'desc'));
+  let q = query(
+    collection(db, 'jobs'), 
+    orderBy('createdAt', 'desc'),
+    limit(filters.limitCount || 50)
+  );
   
   if (filters.companyId) {
     q = query(q, where('companyId', '==', filters.companyId));
