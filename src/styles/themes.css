@@ -1,0 +1,246 @@
+/* Theme System for Different User Roles */
+
+:root {
+  /* Student Theme - Green */
+  --student-primary: #10b981;
+  --student-primary-dark: #059669;
+  --student-primary-light: #d1fae5;
+  --student-accent: #34d399;
+  --student-bg: #f0fdf4;
+  
+  /* Institute Theme - Blue */
+  --institute-primary: #3b82f6;
+  --institute-primary-dark: #2563eb;
+  --institute-primary-light: #dbeafe;
+  --institute-accent: #60a5fa;
+  --institute-bg: #eff6ff;
+  
+  /* Company Theme - Purple */
+  --company-primary: #8b5cf6;
+  --company-primary-dark: #7c3aed;
+  --company-primary-light: #ede9fe;
+  --company-accent: #a78bfa;
+  --company-bg: #f5f3ff;
+  
+  /* Admin Theme - Red/Orange */
+  --admin-primary: #f59e0b;
+  --admin-primary-dark: #d97706;
+  --admin-primary-light: #fef3c7;
+  --admin-accent: #fbbf24;
+  --admin-bg: #fffbeb;
+}
+
+/* Student Theme */
+.theme-student {
+  --primary-color: var(--student-primary);
+  --primary-dark: var(--student-primary-dark);
+  --primary-light: var(--student-primary-light);
+  --accent-color: var(--student-accent);
+  --theme-bg: var(--student-bg);
+}
+
+.theme-student .btn-primary {
+  background-color: var(--student-primary);
+  border-color: var(--student-primary);
+  color: white;
+}
+
+.theme-student .btn-primary:hover {
+  background-color: var(--student-primary-dark);
+  border-color: var(--student-primary-dark);
+  color: white;
+}
+
+.theme-student .card-header {
+  border-left: 4px solid var(--student-primary);
+}
+
+.theme-student .badge-primary {
+  background-color: var(--student-primary);
+}
+
+.theme-student a {
+  color: var(--student-primary);
+}
+
+.theme-student a:hover {
+  color: var(--student-primary-dark);
+}
+
+/* Institute Theme */
+.theme-institute {
+  --primary-color: var(--institute-primary);
+  --primary-dark: var(--institute-primary-dark);
+  --primary-light: var(--institute-primary-light);
+  --accent-color: var(--institute-accent);
+  --theme-bg: var(--institute-bg);
+}
+
+.theme-institute .btn-primary {
+  background-color: var(--institute-primary);
+  border-color: var(--institute-primary);
+  color: white;
+}
+
+.theme-institute .btn-primary:hover {
+  background-color: var(--institute-primary-dark);
+  border-color: var(--institute-primary-dark);
+  color: white;
+}
+
+.theme-institute .card-header {
+  border-left: 4px solid var(--institute-primary);
+}
+
+.theme-institute .badge-primary {
+  background-color: var(--institute-primary);
+}
+
+.theme-institute a {
+  color: var(--institute-primary);
+}
+
+.theme-institute a:hover {
+  color: var(--institute-primary-dark);
+}
+
+/* Company Theme */
+.theme-company {
+  --primary-color: var(--company-primary);
+  --primary-dark: var(--company-primary-dark);
+  --primary-light: var(--company-primary-light);
+  --accent-color: var(--company-accent);
+  --theme-bg: var(--company-bg);
+}
+
+.theme-company .btn-primary {
+  background-color: var(--company-primary);
+  border-color: var(--company-primary);
+  color: white;
+}
+
+.theme-company .btn-primary:hover {
+  background-color: var(--company-primary-dark);
+  border-color: var(--company-primary-dark);
+  color: white;
+}
+
+.theme-company .card-header {
+  border-left: 4px solid var(--company-primary);
+}
+
+.theme-company .badge-primary {
+  background-color: var(--company-primary);
+}
+
+.theme-company a {
+  color: var(--company-primary);
+}
+
+.theme-company a:hover {
+  color: var(--company-primary-dark);
+}
+
+/* Admin Theme */
+.theme-admin {
+  --primary-color: var(--admin-primary);
+  --primary-dark: var(--admin-primary-dark);
+  --primary-light: var(--admin-primary-light);
+  --accent-color: var(--admin-accent);
+  --theme-bg: var(--admin-bg);
+}
+
+.theme-admin .btn-primary {
+  background-color: var(--admin-primary);
+  border-color: var(--admin-primary);
+  color: white;
+}
+
+.theme-admin .btn-primary:hover {
+  background-color: var(--admin-primary-dark);
+  border-color: var(--admin-primary-dark);
+  color: white;
+}
+
+.theme-admin .card-header {
+  border-left: 4px solid var(--admin-primary);
+}
+
+.theme-admin .badge-primary {
+  background-color: var(--admin-primary);
+}
+
+.theme-admin a {
+  color: var(--admin-primary);
+}
+
+.theme-admin a:hover {
+  color: var(--admin-primary-dark);
+}
+
+/* Apply theme background to containers */
+.theme-student .container,
+.theme-institute .container,
+.theme-company .container,
+.theme-admin .container {
+  background-color: var(--theme-bg);
+  min-height: 100vh;
+  padding-bottom: var(--spacing-xl);
+}
+
+/* Themed stat cards */
+.theme-student .card h3,
+.theme-institute .card h3,
+.theme-company .card h3,
+.theme-admin .card h3 {
+  color: var(--primary-color);
+}
+
+/* Themed spinner */
+.theme-student .spinner,
+.theme-institute .spinner,
+.theme-company .spinner,
+.theme-admin .spinner {
+  border-top-color: var(--primary-color);
+}
+
+/* Ensure buttons with link elements have proper text color */
+.theme-student a.btn-primary,
+.theme-institute a.btn-primary,
+.theme-company a.btn-primary,
+.theme-admin a.btn-primary,
+.theme-student a.btn-secondary,
+.theme-institute a.btn-secondary,
+.theme-company a.btn-secondary,
+.theme-admin a.btn-secondary,
+.theme-student a.btn-success,
+.theme-institute a.btn-success,
+.theme-company a.btn-success,
+.theme-admin a.btn-success,
+.theme-student a.btn-danger,
+.theme-institute a.btn-danger,
+.theme-company a.btn-danger,
+.theme-admin a.btn-danger {
+  color: white !important;
+  text-decoration: none;
+}
+
+.theme-student a.btn-primary:hover,
+.theme-institute a.btn-primary:hover,
+.theme-company a.btn-primary:hover,
+.theme-admin a.btn-primary:hover,
+.theme-student a.btn-secondary:hover,
+.theme-institute a.btn-secondary:hover,
+.theme-company a.btn-secondary:hover,
+.theme-admin a.btn-secondary:hover,
+.theme-student a.btn-success:hover,
+.theme-institute a.btn-success:hover,
+.theme-company a.btn-success:hover,
+.theme-admin a.btn-success:hover,
+.theme-student a.btn-danger:hover,
+.theme-institute a.btn-danger:hover,
+.theme-company a.btn-danger:hover,
+.theme-admin a.btn-danger:hover {
+  color: white !important;
+  text-decoration: none;
+}

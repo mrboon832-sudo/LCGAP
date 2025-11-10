@@ -1,0 +1,77 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isVerified() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // File size limit (10MB)
+    function isValidSize() {
+      return request.resource.size < 10 * 1024 * 1024;
+    }
+    
+    // Allowed file types for documents
+    function isValidDocumentType() {
+      return request.resource.contentType.matches('application/pdf')
+        || request.resource.contentType.matches('image/.*')
+        || request.resource.contentType.matches('application/msword')
+        || request.resource.contentType.matches('application/vnd.openxmlformats-officedocument.*');
+    }
+    
+    // Student document uploads (transcripts, certificates, etc.)
+    match /students/{userId}/{allPaths=**} {
+      // Students can upload their own documents
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+      
+      allow write: if isVerified() 
+        && isOwner(userId)
+        && isValidSize()
+        && isValidDocumentType();
+      
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+    
+    // Company logos and documents
+    match /companies/{companyId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      
+      allow write: if isAuthenticated() 
+        && isValidSize()
+        && (isAdmin() || request.auth.token.companyId == companyId);
+    }
+    
+    // Institution logos and documents
+    match /institutions/{institutionId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      
+      allow write: if isAuthenticated() 
+        && isValidSize()
+        && (isAdmin() || request.auth.token.institutionId == institutionId);
+    }
+    
+    // Profile pictures
+    match /profiles/{userId}/{allPaths=**} {
+      allow read: if isAuthenticated();
+      
+      allow write: if isOwner(userId) 
+        && isValidSize()
+        && request.resource.contentType.matches('image/.*');
+      
+      allow delete: if isOwner(userId);
+    }
+  }
+}

@@ -1,0 +1,175 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isVerified() {
+      return request.auth != null && request.auth.token.email_verified == true;
+    }
+    
+    function isOwner(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    
+    function isAdmin() {
+      return request.auth != null && request.auth.token.admin == true;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      
+      // Allow create during signup (before email verification)
+      allow create: if isAuthenticated() 
+        && isOwner(userId)
+        && request.resource.data.email == request.auth.token.email;
+      
+      allow update: if isOwner(userId) || isAdmin();
+      
+      allow delete: if isAdmin();
+      
+      // Subcollection for tracking applications by institution
+      match /applicationsByInstitution/{institutionId} {
+        allow read: if isOwner(userId);
+        
+        allow write: if isOwner(userId)
+          && isVerified()
+          && request.resource.data.courseIds is list
+          && request.resource.data.courseIds.size() <= 2;
+      }
+    }
+    
+    // Institutions collection
+    match /institutions/{institutionId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAdmin();
+      
+      allow update: if isAdmin() 
+        || (isAuthenticated() && resource.data.createdBy == request.auth.uid);
+      
+      allow delete: if isAdmin();
+      
+      // Faculties subcollection
+      match /faculties/{facultyId} {
+        allow read: if isAuthenticated();
+        
+        allow write: if isAdmin() 
+          || (isAuthenticated() && get(/databases/$(database)/documents/institutions/$(institutionId)).data.createdBy == request.auth.uid);
+        
+        // Courses subcollection
+        match /courses/{courseId} {
+          allow read: if isAuthenticated();
+          
+          allow write: if isAdmin() 
+            || (isAuthenticated() && get(/databases/$(database)/documents/institutions/$(institutionId)).data.createdBy == request.auth.uid);
+        }
+      }
+    }
+    
+    // Companies collection
+    match /companies/{companyId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isAdmin();
+      
+      allow update: if isAdmin() 
+        || (isAuthenticated() && resource.data.createdBy == request.auth.uid);
+      
+      allow delete: if isAdmin();
+    }
+    
+    // Jobs collection
+    match /jobs/{jobId} {
+      allow read: if isAuthenticated();
+      
+      allow create: if isVerified()
+        && request.resource.data.companyId is string
+        && request.resource.data.title is string
+        && request.resource.data.description is string;
+      
+      allow update: if isAuthenticated() 
+        && (isAdmin() || resource.data.companyId == request.auth.uid);
+      
+      allow delete: if isAdmin() 
+        || (isAuthenticated() && resource.data.companyId == request.auth.uid);
+    }
+    
+    // Applications collection - CRITICAL SECURITY
+    match /applications/{appId} {
+      allow read: if isAuthenticated() && (
+        isAdmin()
+        || resource.data.studentId == request.auth.uid
+        || resource.data.institutionId == request.auth.uid
+      );
+      
+      // Enforce deterministic ID pattern and student ownership
+      allow create: if isVerified()
+        && request.auth.uid == request.resource.data.studentId
+        && appId == (request.resource.data.institutionId + "_" + request.resource.data.studentId + "_" + request.resource.data.courseId)
+        && request.resource.data.status == 'pending'
+        && request.resource.data.studentId is string
+        && request.resource.data.institutionId is string
+        && request.resource.data.courseId is string;
+      
+      // Only institution or admin can update status
+      allow update: if isAuthenticated() && (
+        isAdmin()
+        || (resource.data.institutionId == request.auth.uid && request.resource.data.keys().hasOnly(['status', 'updatedAt']))
+      );
+      
+      allow delete: if isAdmin();
+    }
+    
+    // Job Applications collection
+    match /jobApplications/{appId} {
+      allow read: if isAuthenticated() && (
+        isAdmin()
+        || resource.data.studentId == request.auth.uid
+        || get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.companyId == request.auth.uid
+      );
+      
+      // Enforce deterministic ID pattern
+      allow create: if isVerified()
+        && request.auth.uid == request.resource.data.studentId
+        && appId == (request.resource.data.jobId + "_" + request.resource.data.studentId)
+        && request.resource.data.status == 'pending';
+      
+      allow update: if isAuthenticated() && (
+        isAdmin()
+        || get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.companyId == request.auth.uid
+      );
+      
+      allow delete: if isAdmin();
+    }
+    
+    // Transcripts/documents metadata
+    match /transcripts/{studentId}/{fileId} {
+      allow read: if isAuthenticated() && (
+        isAdmin()
+        || isOwner(studentId)
+      );
+      
+      allow create: if isVerified() 
+        && isOwner(studentId)
+        && request.resource.data.studentId == studentId;
+      
+      allow update: if isOwner(studentId) || isAdmin();
+      
+      allow delete: if isOwner(studentId) || isAdmin();
+    }
+    
+    // Notifications (optional)
+    match /notifications/{userId}/inbox/{noteId} {
+      allow read: if isOwner(userId);
+      
+      allow create: if isAuthenticated();
+      
+      allow update, delete: if isOwner(userId);
+    }
+  }
+}

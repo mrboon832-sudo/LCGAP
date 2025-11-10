@@ -1,0 +1,426 @@
+import React, { useState, useEffect } from 'react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db, auth } from '../../services/firebase';
+import { updateApplicationStatus } from '../../services/api';
+import { Link } from 'react-router-dom';
+import Footer from '../Layout/Footer';
+import '../../styles/base.css';
+
+const ApplicationsPage = ({ user }) => {
+  const [applications, setApplications] = useState([]);
+  const [jobApplications, setJobApplications] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [filter, setFilter] = useState('all');
+  const [viewType, setViewType] = useState('all'); // 'all', 'courses', 'jobs'
+  const [processingApp, setProcessingApp] = useState(null);
+
+  const fetchApplications = async () => {
+    try {
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        setError('You must be logged in to view applications');
+        setLoading(false);
+        return;
+      }
+
+      // Fetch course applications
+      const appsRef = collection(db, 'applications');
+      let courseQuery;
+
+      if (user.role === 'student') {
+        // Students see their own applications
+        courseQuery = query(appsRef, where('studentId', '==', currentUser.uid));
+      } else if (user.role === 'institute') {
+        // Institutions see applications to their courses
+        courseQuery = query(appsRef, where('institutionId', '==', user.institutionId));
+      } else if (user.role === 'admin') {
+        // Admins see all applications
+        courseQuery = query(appsRef);
+      }
+
+      // Fetch job applications for students
+      const jobAppsRef = collection(db, 'jobApplications');
+      let jobQuery;
+      
+      if (user.role === 'student') {
+        jobQuery = query(jobAppsRef, where('studentId', '==', currentUser.uid));
+      }
+
+      // Execute queries
+      const promises = [];
+      if (courseQuery) promises.push(getDocs(courseQuery));
+      if (jobQuery) promises.push(getDocs(jobQuery));
+
+      const results = await Promise.all(promises);
+      
+      let courseAppsList = [];
+      let jobAppsList = [];
+
+      if (results[0]) {
+        courseAppsList = results[0].docs.map(doc => ({
+          id: doc.id,
+          type: 'course',
+          ...doc.data()
+        }));
+      }
+
+      if (results[1]) {
+        jobAppsList = results[1].docs.map(doc => ({
+          id: doc.id,
+          type: 'job',
+          ...doc.data()
+        }));
+      }
+
+      // Sort by appliedAt or createdAt on client side
+      const sortByDate = (list) => list.sort((a, b) => {
+        const aTime = a.appliedAt?.seconds || a.createdAt?.seconds || 0;
+        const bTime = b.appliedAt?.seconds || b.createdAt?.seconds || 0;
+        return bTime - aTime;
+      });
+      
+      setApplications(sortByDate(courseAppsList));
+      setJobApplications(sortByDate(jobAppsList));
+      setLoading(false);
+    } catch (err) {
+      console.error('Error fetching applications:', err);
+      console.error('Error details:', err.message);
+      setError('Failed to load applications. Please try again.');
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user) {
+      fetchApplications();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  const handleAcceptAdmission = async (appId) => {
+    if (!window.confirm('Are you sure you want to accept this admission offer? You can only accept one final admission.')) {
+      return;
+    }
+    
+    setProcessingApp(appId);
+    setError('');
+    setSuccess('');
+    
+    try {
+      await updateApplicationStatus(appId, 'accepted', {
+        acceptedBy: 'student',
+        acceptedAt: new Date()
+      });
+      setSuccess('Admission accepted successfully! Congratulations!');
+      fetchApplications(); // Refresh the list
+    } catch (err) {
+      console.error('Error accepting admission:', err);
+      setError(err.message || 'Failed to accept admission. Please try again.');
+    } finally {
+      setProcessingApp(null);
+    }
+  };
+
+  const handleRejectAdmission = async (appId) => {
+    if (!window.confirm('Are you sure you want to reject this admission offer? This action cannot be undone.')) {
+      return;
+    }
+    
+    setProcessingApp(appId);
+    setError('');
+    setSuccess('');
+    
+    try {
+      await updateApplicationStatus(appId, 'rejected');
+      setSuccess('Admission offer declined.');
+      fetchApplications(); // Refresh the list
+    } catch (err) {
+      console.error('Error rejecting admission:', err);
+      setError('Failed to reject admission. Please try again.');
+    } finally {
+      setProcessingApp(null);
+    }
+  };
+
+  // Combine and filter applications
+  const allApplications = [...applications, ...jobApplications];
+  
+  const filteredApplications = allApplications.filter(app => {
+    // Filter by view type
+    if (viewType === 'courses' && app.type !== 'course') return false;
+    if (viewType === 'jobs' && app.type !== 'job') return false;
+    
+    // Filter by status
+    if (filter === 'all') return true;
+    return app.status === filter;
+  });
+
+  const getStatusBadge = (status) => {
+    const styles = {
+      pending: 'badge-warning',
+      accepted: 'badge-success',
+      rejected: 'badge-danger'
+    };
+    return `badge ${styles[status] || 'badge-secondary'}`;
+  };
+
+  const getThemeClass = () => {
+    if (!user) return '';
+    switch (user.role) {
+      case 'student': return 'theme-student';
+      case 'institute': return 'theme-institute';
+      case 'admin': return 'theme-admin';
+      default: return '';
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className={getThemeClass()}>
+        <div className="container" style={{ paddingTop: 'var(--spacing-lg)' }}>
+          <div className="spinner"></div>
+          <p className="loading-text">Loading applications...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={getThemeClass()}>
+      <div className="container" style={{ paddingTop: 'var(--spacing-lg)' }}>
+      <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+        <h1 style={{ marginBottom: 'var(--spacing-sm)' }}>
+          {user.role === 'student' ? 'My Applications' : 'Applications'}
+        </h1>
+        <p className="text-muted">
+          {user.role === 'student' 
+            ? 'Track your course applications and their status'
+            : 'Manage course applications'}
+        </p>
+      </div>
+
+      {error && (
+        <div className="alert alert-danger">
+          {error}
+        </div>
+      )}
+
+      {success && (
+        <div className="alert alert-success">
+          {success}
+        </div>
+      )}
+
+      {/* View Type Tabs (for students) */}
+      {user.role === 'student' && (
+        <div style={{ 
+          display: 'flex', 
+          gap: 'var(--spacing-sm)', 
+          marginBottom: 'var(--spacing-md)',
+          borderBottom: '2px solid var(--border-color)'
+        }}>
+          <button
+            onClick={() => setViewType('all')}
+            style={{
+              padding: 'var(--spacing-sm) var(--spacing-md)',
+              background: 'none',
+              border: 'none',
+              borderBottom: viewType === 'all' ? '2px solid var(--primary-color)' : '2px solid transparent',
+              color: viewType === 'all' ? 'var(--primary-color)' : 'var(--text-secondary)',
+              fontWeight: viewType === 'all' ? 600 : 400,
+              cursor: 'pointer',
+              marginBottom: '-2px'
+            }}
+          >
+            All ({allApplications.length})
+          </button>
+          <button
+            onClick={() => setViewType('courses')}
+            style={{
+              padding: 'var(--spacing-sm) var(--spacing-md)',
+              background: 'none',
+              border: 'none',
+              borderBottom: viewType === 'courses' ? '2px solid var(--primary-color)' : '2px solid transparent',
+              color: viewType === 'courses' ? 'var(--primary-color)' : 'var(--text-secondary)',
+              fontWeight: viewType === 'courses' ? 600 : 400,
+              cursor: 'pointer',
+              marginBottom: '-2px'
+            }}
+          >
+            Course Applications ({applications.length})
+          </button>
+          <button
+            onClick={() => setViewType('jobs')}
+            style={{
+              padding: 'var(--spacing-sm) var(--spacing-md)',
+              background: 'none',
+              border: 'none',
+              borderBottom: viewType === 'jobs' ? '2px solid var(--primary-color)' : '2px solid transparent',
+              color: viewType === 'jobs' ? 'var(--primary-color)' : 'var(--text-secondary)',
+              fontWeight: viewType === 'jobs' ? 600 : 400,
+              cursor: 'pointer',
+              marginBottom: '-2px'
+            }}
+          >
+            Job Applications ({jobApplications.length})
+          </button>
+        </div>
+      )}
+
+      {/* Filter Buttons */}
+      <div style={{ 
+        display: 'flex', 
+        gap: 'var(--spacing-sm)', 
+        marginBottom: 'var(--spacing-lg)',
+        flexWrap: 'wrap'
+      }}>
+        <button 
+          className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setFilter('all')}
+        >
+          All ({applications.length})
+        </button>
+        <button 
+          className={`btn ${filter === 'pending' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setFilter('pending')}
+        >
+          Pending ({applications.filter(a => a.status === 'pending').length})
+        </button>
+        <button 
+          className={`btn ${filter === 'accepted' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setFilter('accepted')}
+        >
+          Accepted ({applications.filter(a => a.status === 'accepted').length})
+        </button>
+        <button 
+          className={`btn ${filter === 'rejected' ? 'btn-primary' : 'btn-outline'}`}
+          onClick={() => setFilter('rejected')}
+        >
+          Rejected ({applications.filter(a => a.status === 'rejected').length})
+        </button>
+      </div>
+
+      {/* Applications List */}
+      {filteredApplications.length === 0 ? (
+        <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
+          <p className="text-muted">No applications found.</p>
+          {user.role === 'student' && (
+            <Link to="/institutions" className="btn btn-primary" style={{ marginTop: 'var(--spacing-md)' }}>
+              Browse Institutions
+            </Link>
+          )}
+        </div>
+      ) : (
+        <div style={{ display: 'grid', gap: 'var(--spacing-lg)' }}>
+          {filteredApplications.map(app => (
+            <div key={app.id} className="card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 'var(--spacing-md)' }}>
+                <div>
+                  {/* Display type badge */}
+                  <span style={{
+                    display: 'inline-block',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    marginBottom: 'var(--spacing-xs)',
+                    backgroundColor: app.type === 'job' ? 'var(--success-color)' : 'var(--primary-color)',
+                    color: 'white'
+                  }}>
+                    {app.type === 'job' ? 'JOB' : 'COURSE'}
+                  </span>
+                  <h3 style={{ marginBottom: 'var(--spacing-xs)' }}>
+                    {app.type === 'job' ? (app.jobTitle || 'Job Application') : (app.courseName || 'Course Application')}
+                  </h3>
+                  <p className="text-muted" style={{ marginBottom: 'var(--spacing-xs)' }}>
+                    {app.type === 'job' ? (app.companyName || 'Company') : (app.institutionName || 'Institution')}
+                  </p>
+                  {user.role !== 'student' && (
+                    <p className="text-muted" style={{ fontSize: '0.875rem' }}>
+                      Applicant: {app.studentName || app.studentEmail}
+                    </p>
+                  )}
+                </div>
+                <span className={getStatusBadge(app.status)}>
+                  {app.status?.toUpperCase()}
+                </span>
+              </div>
+
+              <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                  Applied: {app.appliedAt ? new Date(app.appliedAt.seconds * 1000).toLocaleDateString() : (app.createdAt ? new Date(app.createdAt.seconds * 1000).toLocaleDateString() : 'N/A')}
+                </p>
+              </div>
+
+              {app.type === 'course' && app.motivation && (
+                <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                  <strong>Motivation:</strong>
+                  <p style={{ marginTop: 'var(--spacing-xs)', color: 'var(--text-muted)' }}>
+                    {app.motivation.substring(0, 150)}...
+                  </p>
+                </div>
+              )}
+
+              {app.type === 'job' && app.coverLetter && (
+                <div style={{ marginBottom: 'var(--spacing-md)' }}>
+                  <strong>Cover Letter:</strong>
+                  <p style={{ marginTop: 'var(--spacing-xs)', color: 'var(--text-muted)' }}>
+                    {app.coverLetter.substring(0, 150)}...
+                  </p>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
+                <Link to={`/applications/${app.id}`} className="btn btn-primary">
+                  View Details
+                </Link>
+                {user.role === 'institute' && app.status === 'pending' && (
+                  <>
+                    <button className="btn btn-success">Accept</button>
+                    <button className="btn btn-danger">Reject</button>
+                  </>
+                )}
+                {user.role === 'student' && app.type === 'course' && app.status === 'accepted' && (
+                  <>
+                    <button 
+                      className="btn btn-success"
+                      onClick={() => handleAcceptAdmission(app.id)}
+                      disabled={processingApp === app.id}
+                    >
+                      {processingApp === app.id ? 'Processing...' : 'Accept Admission'}
+                    </button>
+                    <button 
+                      className="btn btn-danger"
+                      onClick={() => handleRejectAdmission(app.id)}
+                      disabled={processingApp === app.id}
+                    >
+                      {processingApp === app.id ? 'Processing...' : 'Decline Offer'}
+                    </button>
+                  </>
+                )}
+                {app.promotedFromWaiting && (
+                  <span style={{
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    fontSize: '0.75rem',
+                    backgroundColor: 'var(--info-color)',
+                    color: 'white',
+                    alignSelf: 'center'
+                  }}>
+                    Promoted from Waiting List
+                  </span>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      </div>
+      <Footer />
+    </div>
+  );
+};
+
+export default ApplicationsPage;
