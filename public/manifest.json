@@ -1,0 +1,25 @@
+{
+  "short_name": "LCGAP",
+  "name": "Lesotho Career Guidance and Advancement Platform",
+  "icons": [
+    {
+      "src": "favicon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any"
+    },
+    {
+      "src": "lesotho-flag.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512"
+    },
+    {
+      "src": "lesotho-flag.jpg",
+      "type": "image/jpeg",
+      "sizes": "192x192"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#002868",
+  "background_color": "#ffffff"
+}
