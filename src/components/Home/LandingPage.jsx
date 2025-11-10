@@ -54,14 +54,14 @@ const LandingPage = () => {
             style={{ backgroundImage: `url(${img})` }}
           />
         ))}
-        {/* Gradient Overlay */}
+        {/* Gradient Overlay - Lighter Lesotho Flag Colors */}
         <div style={{
           position: 'absolute',
           top: 0,
           left: 0,
           right: 0,
           bottom: 0,
-          background: 'linear-gradient(135deg, rgba(0, 40, 104, 0.9) 0%, rgba(0, 149, 67, 0.8) 100%)',
+          background: 'linear-gradient(135deg, rgba(0, 40, 104, 0.75) 0%, rgba(0, 149, 67, 0.7) 100%)',
           zIndex: 1
         }}></div>
       </div>
