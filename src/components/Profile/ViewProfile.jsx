@@ -89,22 +89,159 @@ const ViewProfile = () => {
     );
   }
 
+  const calculateCGPA = () => {
+    if (!profile?.highSchool?.subjects || profile.highSchool.subjects.length === 0) {
+      return '0.00';
+    }
+    
+    const gradeValues = { 'A': 4.0, 'B': 3.0, 'C': 2.0, 'D': 1.0, 'E': 0.0 };
+    let total = 0;
+    let count = 0;
+    
+    profile.highSchool.subjects.forEach(subject => {
+      if (typeof subject === 'object' && subject.grade) {
+        total += gradeValues[subject.grade] || 0;
+        count++;
+      }
+    });
+    
+    return count > 0 ? (total / count).toFixed(2) : '0.00';
+  };
+
+  const profileCompletion = ((
+    (profile.displayName ? 20 : 0) +
+    (profile.profile?.phone ? 10 : 0) +
+    (profile.profile?.bio ? 15 : 0) +
+    (profile.highSchool?.name ? 15 : 0) +
+    (profile.highSchool?.subjects?.length > 0 ? 20 : 0) +
+    (profile.certificates?.length > 0 ? 10 : 0) +
+    (profile.workExperience?.length > 0 ? 10 : 0)
+  ));
+
   return (
-    <div className="student-theme">
+    <div className="theme-student">
       <div className="container" style={{ paddingTop: 'var(--spacing-lg)', paddingBottom: 'var(--spacing-xl)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-lg)' }}>
-          <h1>My Profile</h1>
-          <Link to="/profile/edit" className="btn btn-primary">
-            Edit Profile
-          </Link>
+        {/* Header with Gradient */}
+        <div className="card gradient-bg" style={{ 
+          padding: 'var(--spacing-xl)',
+          color: 'white',
+          marginBottom: 'var(--spacing-xl)',
+          borderRadius: '20px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
+            <div>
+              <h1 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '2rem' }}>
+                👤 {profile.displayName || 'My Profile'}
+              </h1>
+              <p style={{ margin: 0, opacity: 0.95, fontSize: '1.1rem' }}>
+                📧 {profile.email}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flexDirection: 'column', alignItems: 'flex-end' }}>
+              <div style={{ 
+                textAlign: 'center',
+                padding: 'var(--spacing-md)',
+                backgroundColor: 'rgba(255, 255, 255, 0.2)',
+                borderRadius: '12px',
+                backdropFilter: 'blur(10px)',
+                minWidth: '120px'
+              }}>
+                <div style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                  {profileCompletion}%
+                </div>
+                <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Complete</div>
+              </div>
+              <Link to="/profile/edit" className="btn" style={{ 
+                backgroundColor: 'white',
+                color: 'var(--primary-color)',
+                fontWeight: 600,
+                padding: 'var(--spacing-sm) var(--spacing-lg)',
+                borderRadius: '12px',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+              }}>
+                ✏️ Edit Profile
+              </Link>
+            </div>
+          </div>
+          {/* Progress Bar */}
+          <div style={{ marginTop: 'var(--spacing-lg)' }}>
+            <div className="progress" style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)', height: '12px' }}>
+              <div 
+                className="progress-bar" 
+                style={{ 
+                  width: `${profileCompletion}%`,
+                  backgroundColor: 'white',
+                  transition: 'width 0.5s ease'
+                }}
+              ></div>
+            </div>
+          </div>
         </div>
 
-        <div className="card">
+        {/* Quick Stats */}
+        <div className="grid grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+          <div className="card shadow-md hover-lift transition-all" style={{ padding: 'var(--spacing-lg)', textAlign: 'center' }}>
+            <div className="icon-badge" style={{ margin: '0 auto var(--spacing-sm)', fontSize: '1.5rem' }}>
+              📊
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+              {calculateCGPA()}
+            </div>
+            <div className="text-muted" style={{ fontSize: '0.875rem' }}>CGPA</div>
+          </div>
+
+          <div className="card shadow-md hover-lift transition-all" style={{ padding: 'var(--spacing-lg)', textAlign: 'center' }}>
+            <div className="icon-badge" style={{ margin: '0 auto var(--spacing-sm)', fontSize: '1.5rem' }}>
+              📚
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+              {profile.highSchool?.subjects?.length || 0}
+            </div>
+            <div className="text-muted" style={{ fontSize: '0.875rem' }}>Subjects</div>
+          </div>
+
+          <div className="card shadow-md hover-lift transition-all" style={{ padding: 'var(--spacing-lg)', textAlign: 'center' }}>
+            <div className="icon-badge" style={{ margin: '0 auto var(--spacing-sm)', fontSize: '1.5rem' }}>
+              🏆
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+              {profile.certificates?.length || 0}
+            </div>
+            <div className="text-muted" style={{ fontSize: '0.875rem' }}>Certificates</div>
+          </div>
+
+          <div className="card shadow-md hover-lift transition-all" style={{ padding: 'var(--spacing-lg)', textAlign: 'center' }}>
+            <div className="icon-badge" style={{ margin: '0 auto var(--spacing-sm)', fontSize: '1.5rem' }}>
+              💼
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+              {profile.workExperience?.length || 0}
+            </div>
+            <div className="text-muted" style={{ fontSize: '0.875rem' }}>Experience</div>
+          </div>
+        </div>
+
+        <div className="card shadow-md" style={{ borderRadius: '16px' }}>
           {/* Basic Information */}
-          <section style={{ paddingBottom: 'var(--spacing-xl)', borderBottom: '1px solid var(--border-color)' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--primary-color)', marginBottom: 'var(--spacing-lg)' }}>
-              Basic Information
-            </h2>
+          <section style={{ marginBottom: 'var(--spacing-xl)' }}>
+            <div className="card shadow-sm" style={{ 
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
+              borderRadius: '12px',
+              padding: 'var(--spacing-lg)',
+              border: '1px solid rgba(16, 185, 129, 0.2)'
+            }}>
+              <h2 style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 'var(--spacing-sm)',
+                margin: 0,
+                marginBottom: 'var(--spacing-lg)',
+                fontSize: '1.5rem',
+                color: 'var(--primary-color)'
+              }}>
+                <span className="icon-badge" style={{ fontSize: '1.5rem' }}>📋</span>
+                Basic Information
+              </h2>
             
             <div style={{ display: 'grid', gap: 'var(--spacing-md)' }}>
               <div>
@@ -137,13 +274,29 @@ const ViewProfile = () => {
                 <p>{profile.profile?.bio || 'No bio provided'}</p>
               </div>
             </div>
+            </div>
           </section>
 
           {/* High School Information */}
-          <section style={{ paddingTop: 'var(--spacing-xl)', paddingBottom: 'var(--spacing-xl)', borderBottom: '1px solid var(--border-color)' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--primary-color)', marginBottom: 'var(--spacing-lg)' }}>
-              High School / Secondary Education
-            </h2>
+          <section style={{ marginBottom: 'var(--spacing-xl)' }}>
+            <div className="card shadow-sm" style={{ 
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
+              borderRadius: '12px',
+              padding: 'var(--spacing-lg)',
+              border: '1px solid rgba(16, 185, 129, 0.2)'
+            }}>
+              <h2 style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 'var(--spacing-sm)',
+                margin: 0,
+                marginBottom: 'var(--spacing-lg)',
+                fontSize: '1.5rem',
+                color: 'var(--primary-color)'
+              }}>
+                <span className="icon-badge" style={{ fontSize: '1.5rem' }}>🎓</span>
+                High School / Secondary Education
+              </h2>
             
             {profile.highSchool && (profile.highSchool.name || profile.highSchool.gpa) ? (
               <div style={{ display: 'grid', gap: 'var(--spacing-md)' }}>
@@ -208,28 +361,57 @@ const ViewProfile = () => {
             ) : (
               <p className="text-muted">No high school information provided yet</p>
             )}
+            </div>
           </section>
 
           {/* Certificates */}
-          <section style={{ paddingTop: 'var(--spacing-xl)', paddingBottom: 'var(--spacing-xl)', borderBottom: '1px solid var(--border-color)' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--primary-color)', marginBottom: 'var(--spacing-lg)' }}>
-              Certificates & Qualifications
-            </h2>
+          <section style={{ marginBottom: 'var(--spacing-xl)' }}>
+            <div className="card shadow-sm" style={{ 
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
+              borderRadius: '12px',
+              padding: 'var(--spacing-lg)',
+              border: '1px solid rgba(16, 185, 129, 0.2)'
+            }}>
+              <h2 style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 'var(--spacing-sm)',
+                margin: 0,
+                marginBottom: 'var(--spacing-lg)',
+                fontSize: '1.5rem',
+                color: 'var(--primary-color)'
+              }}>
+                <span className="icon-badge" style={{ fontSize: '1.5rem' }}>🏆</span>
+                Certificates & Qualifications
+                {profile.certificates?.length > 0 && (
+                  <span style={{ 
+                    marginLeft: 'auto',
+                    fontSize: '1rem',
+                    backgroundColor: 'var(--primary-color)',
+                    color: 'white',
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '20px'
+                  }}>
+                    {profile.certificates.length}
+                  </span>
+                )}
+              </h2>
             
             {profile.certificates && profile.certificates.length > 0 ? (
               <div style={{ display: 'grid', gap: 'var(--spacing-md)' }}>
                 {profile.certificates.map((cert, index) => (
                   <div
                     key={cert.id || index}
+                    className="card shadow-sm hover-lift transition-all"
                     style={{
                       padding: 'var(--spacing-md)',
-                      backgroundColor: 'var(--background-secondary)',
-                      borderRadius: 'var(--border-radius)',
+                      backgroundColor: 'white',
+                      borderRadius: '12px',
                       borderLeft: '4px solid var(--primary-color)'
                     }}
                   >
-                    <h4 style={{ marginBottom: 'var(--spacing-xs)', color: 'var(--primary-color)' }}>
-                      {cert.name}
+                    <h4 style={{ marginBottom: 'var(--spacing-xs)', color: 'var(--primary-color)', fontWeight: 600 }}>
+                      🏆 {cert.name}
                     </h4>
                     <p style={{ fontWeight: 500, marginBottom: 'var(--spacing-xs)' }}>
                       {cert.issuer}
@@ -240,7 +422,7 @@ const ViewProfile = () => {
                       </p>
                     )}
                     {cert.description && (
-                      <p style={{ marginTop: 'var(--spacing-sm)', color: 'var(--text-secondary)' }}>
+                      <p style={{ marginTop: 'var(--spacing-sm)', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
                         {cert.description}
                       </p>
                     )}
@@ -250,39 +432,68 @@ const ViewProfile = () => {
             ) : (
               <p className="text-muted">No certificates added yet</p>
             )}
+            </div>
           </section>
 
           {/* Work Experience */}
-          <section style={{ paddingTop: 'var(--spacing-xl)' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--primary-color)', marginBottom: 'var(--spacing-lg)' }}>
-              Work Experience
-            </h2>
+          <section>
+            <div className="card shadow-sm" style={{ 
+              background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
+              borderRadius: '12px',
+              padding: 'var(--spacing-lg)',
+              border: '1px solid rgba(16, 185, 129, 0.2)'
+            }}>
+              <h2 style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: 'var(--spacing-sm)',
+                margin: 0,
+                marginBottom: 'var(--spacing-lg)',
+                fontSize: '1.5rem',
+                color: 'var(--primary-color)'
+              }}>
+                <span className="icon-badge" style={{ fontSize: '1.5rem' }}>💼</span>
+                Work Experience
+                {profile.workExperience?.length > 0 && (
+                  <span style={{ 
+                    marginLeft: 'auto',
+                    fontSize: '1rem',
+                    backgroundColor: 'var(--primary-color)',
+                    color: 'white',
+                    padding: '0.25rem 0.75rem',
+                    borderRadius: '20px'
+                  }}>
+                    {profile.workExperience.length}
+                  </span>
+                )}
+              </h2>
             
             {profile.workExperience && profile.workExperience.length > 0 ? (
               <div style={{ display: 'grid', gap: 'var(--spacing-md)' }}>
                 {profile.workExperience.map((exp, index) => (
                   <div
                     key={exp.id || index}
+                    className="card shadow-sm hover-lift transition-all"
                     style={{
                       padding: 'var(--spacing-md)',
-                      backgroundColor: 'var(--background-secondary)',
-                      borderRadius: 'var(--border-radius)',
+                      backgroundColor: 'white',
+                      borderRadius: '12px',
                       borderLeft: '4px solid var(--success-color)'
                     }}
                   >
-                    <h4 style={{ marginBottom: 'var(--spacing-xs)', color: 'var(--primary-color)' }}>
-                      {exp.title}
+                    <h4 style={{ marginBottom: 'var(--spacing-xs)', color: 'var(--primary-color)', fontWeight: 600 }}>
+                      💼 {exp.title}
                     </h4>
-                    <p style={{ fontWeight: 500, marginBottom: 'var(--spacing-xs)' }}>
-                      {exp.company} {exp.location && `• ${exp.location}`}
+                    <p style={{ fontWeight: 500, marginBottom: 'var(--spacing-xs)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)', flexWrap: 'wrap' }}>
+                      🏢 {exp.company} {exp.location && <><span style={{ color: 'var(--text-muted)' }}>•</span> 📍 {exp.location}</>}
                     </p>
                     <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: 'var(--spacing-xs)' }}>
                       📅 {exp.startDate && new Date(exp.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                       {' - '}
-                      {exp.current ? '✨ Present' : (exp.endDate && new Date(exp.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }))}
+                      {exp.current ? <span style={{ color: 'var(--primary-color)', fontWeight: 600 }}>✨ Present</span> : (exp.endDate && new Date(exp.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }))}
                     </p>
                     {exp.description && (
-                      <p style={{ marginTop: 'var(--spacing-sm)', color: 'var(--text-secondary)' }}>
+                      <p style={{ marginTop: 'var(--spacing-sm)', color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
                         {exp.description}
                       </p>
                     )}
@@ -292,16 +503,25 @@ const ViewProfile = () => {
             ) : (
               <p className="text-muted">No work experience added yet</p>
             )}
+            </div>
           </section>
         </div>
 
         {/* Action Buttons */}
-        <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-xl)' }}>
-          <Link to="/profile/edit" className="btn btn-primary">
-            Edit Profile
+        <div style={{ 
+          display: 'flex', 
+          gap: 'var(--spacing-md)', 
+          marginTop: 'var(--spacing-xl)',
+          padding: 'var(--spacing-lg)',
+          backgroundColor: 'var(--background-secondary)',
+          borderRadius: '12px',
+          justifyContent: 'center'
+        }}>
+          <Link to="/profile/edit" className="btn btn-primary btn-lg hover-scale-sm" style={{ minWidth: '160px' }}>
+            ✏️ Edit Profile
           </Link>
-          <Link to="/dashboard" className="btn btn-outline">
-            Back to Dashboard
+          <Link to="/dashboard" className="btn btn-outline btn-lg hover-scale-sm" style={{ minWidth: '160px' }}>
+            🏠 Dashboard
           </Link>
         </div>
       </div>
