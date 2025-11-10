@@ -39,57 +39,113 @@ const InstitutionList = () => {
   }
 
   return (
-    <div className="student-theme">
+    <div className="theme-student">
       <div className="container" style={{ paddingTop: 'var(--spacing-lg)' }}>
-        <h1>Institutions</h1>
-        <p className="text-muted">Browse and apply to educational institutions</p>
+        {/* Header with Stats */}
+        <div className="card gradient-bg" style={{ 
+          padding: 'var(--spacing-xl)',
+          color: 'white',
+          marginBottom: 'var(--spacing-xl)',
+          borderRadius: '20px'
+        }}>
+          <h1 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '2rem' }}>
+            🏫 Explore Institutions
+          </h1>
+          <p style={{ margin: 0, opacity: 0.95, fontSize: '1.1rem' }}>
+            Discover {institutions.length} educational institutions in Lesotho
+          </p>
+        </div>
 
-      <div className="card" style={{ marginTop: 'var(--spacing-xl)' }}>
+      {/* Enhanced Search Card */}
+      <div className="card shadow-md" style={{ marginTop: 'var(--spacing-xl)', padding: 'var(--spacing-lg)' }}>
         <div className="search-input">
           <input
             type="text"
             className="form-input"
-            placeholder="Search institutions by name or location..."
+            placeholder="🔍 Search institutions by name or location..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              padding: 'var(--spacing-md)',
+              fontSize: '1rem',
+              border: '2px solid #e5e7eb',
+              borderRadius: '12px',
+              transition: 'all 0.3s ease'
+            }}
           />
-          <span className="search-input-icon">🔍</span>
         </div>
+        {searchTerm && (
+          <p className="text-muted" style={{ marginTop: 'var(--spacing-sm)', fontSize: '0.875rem' }}>
+            Found {filteredInstitutions.length} result{filteredInstitutions.length !== 1 ? 's' : ''}
+          </p>
+        )}
       </div>
 
       {filteredInstitutions.length === 0 ? (
-        <div className="card" style={{ marginTop: 'var(--spacing-lg)' }}>
-          <div className="alert alert-info">
-            <p>No institutions found matching your search.</p>
+        <div className="card shadow-md" style={{ marginTop: 'var(--spacing-lg)', padding: 'var(--spacing-xl)' }}>
+          <div style={{ 
+            textAlign: 'center',
+            padding: 'var(--spacing-xl)',
+            backgroundColor: '#f0fdf4',
+            borderRadius: '12px'
+          }}>
+            <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)' }}>🔍</div>
+            <h3 style={{ marginBottom: 'var(--spacing-sm)' }}>No Institutions Found</h3>
+            <p className="text-muted">Try adjusting your search criteria</p>
           </div>
         </div>
       ) : (
-        <div className="grid grid-2" style={{ marginTop: 'var(--spacing-lg)' }}>
+        <div className="grid grid-2" style={{ marginTop: 'var(--spacing-lg)', gap: 'var(--spacing-lg)' }}>
           {filteredInstitutions.map((institution) => (
-            <div key={institution.id} className="card">
-              <div className="card-header">
-                <h3 className="card-title">{institution.name}</h3>
+            <div 
+              key={institution.id} 
+              className="card shadow-md hover-lift transition-all" 
+              style={{
+                border: '1px solid #e5e7eb',
+                borderRadius: '16px',
+                overflow: 'hidden'
+              }}
+            >
+              <div style={{
+                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                padding: 'var(--spacing-lg)',
+                color: 'white'
+              }}>
+                <h3 style={{ margin: 0, fontSize: '1.3rem' }}>{institution.name}</h3>
               </div>
-              <div>
-                <p className="text-muted">
-                  📍 {institution.location || 'Location not specified'}
-                </p>
-                <p style={{ marginTop: 'var(--spacing-md)' }}>
+              <div style={{ padding: 'var(--spacing-lg)' }}>
+                <div style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 'var(--spacing-sm)',
+                  marginBottom: 'var(--spacing-md)',
+                  color: '#64748b'
+                }}>
+                  <span>📍</span>
+                  <span>{institution.location || 'Location not specified'}</span>
+                </div>
+                <p style={{ 
+                  color: '#475569',
+                  lineHeight: 1.6,
+                  marginBottom: 'var(--spacing-lg)'
+                }}>
                   {institution.profile?.substring(0, 150) || 'No description available'}
                   {institution.profile?.length > 150 ? '...' : ''}
                 </p>
                 <div className="flex gap-md" style={{ marginTop: 'var(--spacing-lg)' }}>
                   <Link
                     to={`/institutions/${institution.id}`}
-                    className="btn btn-primary btn-sm"
+                    className="btn btn-primary btn-sm hover-lift transition-all"
+                    style={{ flex: 1, textAlign: 'center' }}
                   >
-                    View Details
+                    📋 View Details
                   </Link>
                   <Link
                     to={`/institutions/${institution.id}/apply`}
-                    className="btn btn-outline btn-sm"
+                    className="btn btn-outline btn-sm hover-lift transition-all"
+                    style={{ flex: 1, textAlign: 'center' }}
                   >
-                    Apply Now
+                    ✏️ Apply Now
                   </Link>
                 </div>
               </div>

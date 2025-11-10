@@ -216,48 +216,108 @@ const ApplicationsPage = ({ user }) => {
     );
   }
 
+  const totalApplications = applications.length + jobApplications.length;
+  const acceptedCount = applications.filter(app => app.status === 'accepted').length;
+
   return (
     <div className={getThemeClass()}>
       <div className="container" style={{ paddingTop: 'var(--spacing-lg)' }}>
-      <div style={{ marginBottom: 'var(--spacing-xl)' }}>
-        <h1 style={{ marginBottom: 'var(--spacing-sm)' }}>
-          {user.role === 'student' ? 'My Applications' : 'Applications'}
+      {/* Header with Gradient */}
+      <div className="card gradient-bg" style={{ 
+        padding: 'var(--spacing-xl)',
+        color: 'white',
+        marginBottom: 'var(--spacing-xl)',
+        borderRadius: '20px'
+      }}>
+        <h1 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '2rem' }}>
+          📋 {user.role === 'student' ? 'My Applications' : 'Applications'}
         </h1>
-        <p className="text-muted">
+        <p style={{ margin: 0, opacity: 0.95, fontSize: '1.1rem' }}>
           {user.role === 'student' 
-            ? 'Track your course applications and their status'
-            : 'Manage course applications'}
+            ? `Tracking ${totalApplications} application${totalApplications !== 1 ? 's' : ''} across institutions and jobs`
+            : 'Manage and review course applications'}
         </p>
+        {user.role === 'student' && totalApplications > 0 && (
+          <div style={{ 
+            marginTop: 'var(--spacing-lg)',
+            display: 'flex',
+            gap: 'var(--spacing-lg)',
+            flexWrap: 'wrap'
+          }}>
+            <div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{applications.length}</div>
+              <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Course Applications</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{acceptedCount}</div>
+              <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Accepted</div>
+            </div>
+            <div>
+              <div style={{ fontSize: '1.5rem', fontWeight: 'bold' }}>{jobApplications.length}</div>
+              <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Job Applications</div>
+            </div>
+          </div>
+        )}
       </div>
 
       {error && (
-        <div className="alert alert-danger">
+        <div className="alert alert-danger shadow-md" style={{ 
+          borderRadius: '12px',
+          border: '1px solid #fee2e2'
+        }}>
           {error}
         </div>
       )}
 
       {success && (
-        <div className="alert alert-success">
+        <div className="alert alert-success shadow-md" style={{ 
+          borderRadius: '12px',
+          border: '1px solid #d1fae5'
+        }}>
           {success}
         </div>
       )}
 
-      {/* Multiple Acceptances Warning */}
+      {/* Multiple Acceptances Warning - Enhanced */}
       {user.role === 'student' && applications.filter(app => app.status === 'accepted' && !app.finalAdmissionConfirmed).length > 1 && (
-        <div className="alert alert-warning" style={{ marginBottom: 'var(--spacing-lg)' }}>
-          <h4 style={{ marginBottom: 'var(--spacing-sm)' }}>⚠️ Multiple Acceptances Detected</h4>
-          <p>
-            You have been accepted to {applications.filter(app => app.status === 'accepted').length} institutions. 
-            You must select ONE final admission. When you confirm your choice:
-          </p>
-          <ul style={{ marginLeft: 'var(--spacing-lg)', marginTop: 'var(--spacing-sm)' }}>
-            <li>Your other acceptances will be automatically declined</li>
-            <li>Students on the waiting lists will be promoted to take your declined spots</li>
-            <li>This action cannot be undone</li>
-          </ul>
-          <p style={{ marginTop: 'var(--spacing-sm)', fontWeight: 600 }}>
-            Please review your acceptances below and click "Select as Final Admission" on your preferred institution.
-          </p>
+        <div className="card shadow-lg" style={{ 
+          marginBottom: 'var(--spacing-lg)',
+          padding: 'var(--spacing-xl)',
+          background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+          border: '2px solid #f59e0b',
+          borderRadius: '16px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'start', gap: 'var(--spacing-md)' }}>
+            <div style={{ fontSize: '2.5rem' }}>⚠️</div>
+            <div style={{ flex: 1 }}>
+              <h4 style={{ marginBottom: 'var(--spacing-md)', color: '#92400e' }}>
+                Multiple Acceptances Detected
+              </h4>
+              <p style={{ color: '#78350f', marginBottom: 'var(--spacing-sm)' }}>
+                You have been accepted to {applications.filter(app => app.status === 'accepted').length} institutions. 
+                You must select ONE final admission. When you confirm your choice:
+              </p>
+              <ul style={{ 
+                marginLeft: 'var(--spacing-lg)', 
+                marginTop: 'var(--spacing-md)',
+                color: '#78350f'
+              }}>
+                <li>Your other acceptances will be automatically declined</li>
+                <li>Students on the waiting lists will be promoted to take your declined spots</li>
+                <li>This action cannot be undone</li>
+              </ul>
+              <p style={{ 
+                marginTop: 'var(--spacing-md)', 
+                fontWeight: 600,
+                color: '#92400e',
+                padding: 'var(--spacing-sm)',
+                backgroundColor: 'rgba(255, 255, 255, 0.5)',
+                borderRadius: '8px'
+              }}>
+                👉 Please click "Select as Final Admission" on your preferred institution below.
+              </p>
+            </div>
+          </div>
         </div>
       )}
 
