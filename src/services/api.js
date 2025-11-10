@@ -124,11 +124,30 @@ export const createCourse = async (institutionId, facultyId, data) => {
   return courseRef.id;
 };
 
-export const getCourses = async (institutionId, facultyId) => {
-  const q = query(
-    collection(db, 'institutions', institutionId, 'faculties', facultyId, 'courses'),
-    orderBy('name')
-  );
+export const getCourses = async (filters = {}) => {
+  // If institutionId and facultyId provided, use subcollection query (old behavior)
+  if (filters.institutionId && filters.facultyId) {
+    const q = query(
+      collection(db, 'institutions', filters.institutionId, 'faculties', filters.facultyId, 'courses'),
+      orderBy('name')
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+  
+  // If only institutionId provided, query from courses collection
+  if (filters.institutionId) {
+    const q = query(
+      collection(db, 'courses'),
+      where('institutionId', '==', filters.institutionId),
+      limit(50)
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+  
+  // Default: get all courses
+  const q = query(collection(db, 'courses'), limit(50));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };

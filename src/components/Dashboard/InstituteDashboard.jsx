@@ -103,14 +103,14 @@ const InstituteDashboard = ({ user, institutionId }) => {
           <Link to="/manage-institution" className="btn btn-primary">
             Manage Institution
           </Link>
+          <Link to="/manage-applications" className="btn btn-primary">
+            Review Applications
+          </Link>
           <Link to="/faculties" className="btn btn-secondary">
             Manage Faculties
           </Link>
           <Link to="/courses" className="btn btn-secondary">
             Manage Courses
-          </Link>
-          <Link to="/applications" className="btn btn-outline">
-            Review Applications
           </Link>
         </div>
       </div>

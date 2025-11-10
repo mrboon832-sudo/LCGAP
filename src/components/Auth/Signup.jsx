@@ -84,6 +84,7 @@ const Signup = () => {
         email: formData.email,
         role: formData.role,
         emailVerified: featureFlags.bypassEmailVerification ? true : false,
+        status: formData.role === 'company' ? 'pending' : 'active', // Companies need approval
         profile: {
           phone: formData.phone,
           bio: formData.bio
@@ -315,6 +316,7 @@ const Signup = () => {
               <option value="student">Student</option>
               <option value="institute">Institution Representative</option>
               <option value="company">Company Representative</option>
+              <option value="admin">Administrator</option>
             </select>
           </div>
 

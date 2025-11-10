@@ -54,7 +54,7 @@ const StudentProfile = () => {
     description: ''
   });
 
-  const [newSubject, setNewSubject] = useState('');
+  const [newSubject, setNewSubject] = useState({ name: '', grade: 'C' });
 
   useEffect(() => {
     loadProfile();
@@ -115,16 +115,33 @@ const StudentProfile = () => {
   };
 
   const addSubject = () => {
-    if (newSubject.trim()) {
+    if (newSubject.name.trim()) {
       setFormData(prev => ({
         ...prev,
         highSchool: {
           ...prev.highSchool,
-          subjects: [...prev.highSchool.subjects, newSubject.trim()]
+          subjects: [...prev.highSchool.subjects, { 
+            name: newSubject.name.trim(), 
+            grade: newSubject.grade,
+            id: Date.now()
+          }]
         }
       }));
-      setNewSubject('');
+      setNewSubject({ name: '', grade: 'C' });
     }
+  };
+
+  const calculateCGPA = () => {
+    const subjects = formData.highSchool.subjects;
+    if (!subjects || subjects.length === 0) return '0.00';
+    
+    const gradePoints = { 'A': 4.0, 'B': 3.0, 'C': 2.0, 'D': 1.0, 'E': 0.0 };
+    const total = subjects.reduce((sum, subject) => {
+      const points = gradePoints[subject.grade] || 0;
+      return sum + points;
+    }, 0);
+    
+    return (total / subjects.length).toFixed(2);
   };
 
   const removeSubject = (index) => {
@@ -392,16 +409,29 @@ const StudentProfile = () => {
               </div>
 
               <div className="form-group">
-                <label className="form-label">Subjects / Courses</label>
-                <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-sm)' }}>
+                <label className="form-label">Subjects / Courses & Grades</label>
+                <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
                   <input
                     type="text"
                     className="form-input"
-                    value={newSubject}
-                    onChange={(e) => setNewSubject(e.target.value)}
+                    style={{ flex: '1 1 200px' }}
+                    value={newSubject.name}
+                    onChange={(e) => setNewSubject(prev => ({ ...prev, name: e.target.value }))}
                     placeholder="e.g., Mathematics"
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addSubject())}
                   />
+                  <select
+                    className="form-input"
+                    style={{ flex: '0 0 100px' }}
+                    value={newSubject.grade}
+                    onChange={(e) => setNewSubject(prev => ({ ...prev, grade: e.target.value }))}
+                  >
+                    <option value="A">A (4.0)</option>
+                    <option value="B">B (3.0)</option>
+                    <option value="C">C (2.0)</option>
+                    <option value="D">D (1.0)</option>
+                    <option value="E">E (0.0)</option>
+                  </select>
                   <button
                     type="button"
                     className="btn btn-outline"
@@ -410,14 +440,26 @@ const StudentProfile = () => {
                     Add Subject
                   </button>
                 </div>
+                
+                {formData.highSchool.subjects.length > 0 && (
+                  <div style={{ 
+                    padding: 'var(--spacing-sm)', 
+                    backgroundColor: 'var(--background-color)', 
+                    borderRadius: '4px',
+                    marginBottom: 'var(--spacing-sm)'
+                  }}>
+                    <strong>CGPA: {calculateCGPA()}</strong> / 4.00
+                  </div>
+                )}
+                
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-sm)' }}>
                   {formData.highSchool.subjects.map((subject, index) => (
                     <span
-                      key={index}
+                      key={subject.id || index}
                       className="badge"
                       style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}
                     >
-                      {subject}
+                      {typeof subject === 'string' ? subject : `${subject.name} (${subject.grade})`}
                       <button
                         type="button"
                         onClick={() => removeSubject(index)}

@@ -19,7 +19,6 @@ import Signup from './components/Auth/Signup';
 
 // Lazy-loaded components (loaded on demand)
 const VerifyEmailNotice = lazy(() => import('./components/Auth/VerifyEmailNotice'));
-const AdminDashboard = lazy(() => import('./components/Dashboard/AdminDashboard'));
 const StudentDashboard = lazy(() => import('./components/Dashboard/StudentDashboard'));
 const InstituteDashboard = lazy(() => import('./components/Dashboard/InstituteDashboard'));
 const CompanyDashboard = lazy(() => import('./components/Dashboard/CompanyDashboard'));
@@ -28,11 +27,18 @@ const InstitutionProfile = lazy(() => import('./components/Institutions/Institut
 const ManageFaculties = lazy(() => import('./components/Institutions/ManageFaculties'));
 const ManageCourses = lazy(() => import('./components/Institutions/ManageCourses'));
 const ManageInstitution = lazy(() => import('./components/Institutions/ManageInstitution'));
+const ManageApplications = lazy(() => import('./components/Institutions/ManageApplications'));
 const JobsPage = lazy(() => import('./components/Jobs/JobsPage'));
+// Admin components
+const AdminDashboard = lazy(() => import('./components/Admin/AdminDashboard'));
+const ManageInstitutions = lazy(() => import('./components/Admin/ManageInstitutions'));
+const ManageCompanies = lazy(() => import('./components/Admin/ManageCompanies'));
+const SystemReports = lazy(() => import('./components/Admin/SystemReports'));
 const JobDetails = lazy(() => import('./components/Jobs/JobDetails'));
 const JobApplyForm = lazy(() => import('./components/Jobs/JobApplyForm'));
 const ManageJobs = lazy(() => import('./components/Jobs/ManageJobs'));
 const ApplicationsPage = lazy(() => import('./components/Applications/ApplicationsPage'));
+const ApplyForm = lazy(() => import('./components/Applications/ApplyForm'));
 const ApplicantsPage = lazy(() => import('./components/Company/ApplicantsPage'));
 const StudentProfile = lazy(() => import('./components/Profile/StudentProfile'));
 const ViewProfile = lazy(() => import('./components/Profile/ViewProfile'));
@@ -195,6 +201,19 @@ function App() {
           }
         />
 
+        {/* Apply to Institution */}
+        <Route
+          path="/institutions/:institutionId/apply"
+          element={
+            <ProtectedRoute user={user}>
+              <>
+                <Header user={userProfile} onLogout={handleLogout} />
+                <ApplyForm user={userProfile} />
+              </>
+            </ProtectedRoute>
+          }
+        />
+
         {/* Jobs Page */}
         <Route
           path="/jobs"
@@ -286,6 +305,19 @@ function App() {
           }
         />
 
+        {/* Manage Applications (Institute) */}
+        <Route
+          path="/manage-applications"
+          element={
+            <ProtectedRoute user={user}>
+              <>
+                <Header user={userProfile} onLogout={handleLogout} />
+                <ManageApplications user={user} institutionId={userProfile?.institutionId} />
+              </>
+            </ProtectedRoute>
+          }
+        />
+
         {/* Applications Page */}
         <Route
           path="/applications"
@@ -294,6 +326,41 @@ function App() {
               <>
                 <Header user={userProfile} onLogout={handleLogout} />
                 <ApplicationsPage user={userProfile} />
+              </>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Admin Routes */}
+        <Route
+          path="/admin/institutions"
+          element={
+            <ProtectedRoute user={user}>
+              <>
+                <Header user={userProfile} onLogout={handleLogout} />
+                <ManageInstitutions />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/companies"
+          element={
+            <ProtectedRoute user={user}>
+              <>
+                <Header user={userProfile} onLogout={handleLogout} />
+                <ManageCompanies />
+              </>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin/reports"
+          element={
+            <ProtectedRoute user={user}>
+              <>
+                <Header user={userProfile} onLogout={handleLogout} />
+                <SystemReports />
               </>
             </ProtectedRoute>
           }
