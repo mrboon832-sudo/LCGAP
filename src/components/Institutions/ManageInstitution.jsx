@@ -155,70 +155,116 @@ const ManageInstitution = () => {
 
   return (
     <div className="theme-institute">
-      <div className="container">
-        <div className="page-header">
-          <h1>Manage Institution</h1>
-          <p>Update your institution's information</p>
+      <div className="container" style={{ paddingTop: 'var(--spacing-lg)', paddingBottom: 'var(--spacing-xl)' }}>
+        {/* Header with Gradient */}
+        <div className="card gradient-bg" style={{ 
+          padding: 'var(--spacing-xl)',
+          color: 'white',
+          marginBottom: 'var(--spacing-xl)',
+          borderRadius: '20px'
+        }}>
+          <h1 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '2rem' }}>
+            🏛️ Manage Institution
+          </h1>
+          <p style={{ margin: 0, opacity: 0.95, fontSize: '1.1rem' }}>
+            Update your institution's information and settings
+          </p>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
-        {success && <div className="success-message">{success}</div>}
+        {error && (
+          <div className="alert alert-danger shadow-md" style={{ 
+            borderRadius: '12px',
+            marginBottom: 'var(--spacing-lg)'
+          }}>
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="alert alert-success shadow-md" style={{ 
+            borderRadius: '12px',
+            marginBottom: 'var(--spacing-lg)'
+          }}>
+            {success}
+          </div>
+        )}
 
-        <div className="form-container">
+        <div className="card shadow-md" style={{ borderRadius: '16px' }}>
           <form onSubmit={handleSubmit}>
-            <div className="form-grid">
-              {/* Basic Information */}
-              <div className="form-section">
-                <h3>Basic Information</h3>
+            {/* Basic Information */}
+            <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+              <div className="card shadow-sm" style={{ 
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)',
+                borderRadius: '12px',
+                padding: 'var(--spacing-lg)',
+                border: '1px solid rgba(59, 130, 246, 0.2)'
+              }}>
+                <h3 style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 'var(--spacing-sm)',
+                  margin: 0,
+                  marginBottom: 'var(--spacing-lg)',
+                  fontSize: '1.3rem',
+                  color: 'var(--primary-color)'
+                }}>
+                  <span className="icon-badge" style={{ fontSize: '1.3rem' }}>📋</span>
+                  Basic Information
+                </h3>
                 
                 <div className="form-group">
-                  <label htmlFor="name">Institution Name *</label>
+                  <label htmlFor="name" className="form-label form-label-required">Institution Name</label>
                   <input
                     type="text"
                     id="name"
                     name="name"
+                    className="form-input"
                     value={formData.name}
                     onChange={handleChange}
                     required
                   />
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor="shortName">Short Name / Acronym</label>
-                  <input
-                    type="text"
-                    id="shortName"
-                    name="shortName"
-                    value={formData.shortName}
-                    onChange={handleChange}
-                    placeholder="e.g., NUL, LCE"
-                  />
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="shortName" className="form-label">Short Name / Acronym</label>
+                    <input
+                      type="text"
+                      id="shortName"
+                      name="shortName"
+                      className="form-input"
+                      value={formData.shortName}
+                      onChange={handleChange}
+                      placeholder="e.g., NUL, LCE"
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="type" className="form-label form-label-required">Institution Type</label>
+                    <select
+                      id="type"
+                      name="type"
+                      className="form-input"
+                      value={formData.type}
+                      onChange={handleChange}
+                      required
+                    >
+                      <option value="">Select type</option>
+                      <option value="University">🎓 University</option>
+                      <option value="College">🏫 College</option>
+                      <option value="Technical Institute">🔧 Technical Institute</option>
+                      <option value="Vocational School">⚙️ Vocational School</option>
+                      <option value="Other">📚 Other</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="type">Institution Type *</label>
-                  <select
-                    id="type"
-                    name="type"
-                    value={formData.type}
-                    onChange={handleChange}
-                    required
-                  >
-                    <option value="">Select type</option>
-                    <option value="University">University</option>
-                    <option value="College">College</option>
-                    <option value="Technical Institute">Technical Institute</option>
-                    <option value="Vocational School">Vocational School</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="location">Location *</label>
+                  <label htmlFor="location" className="form-label form-label-required">Location</label>
                   <input
                     type="text"
                     id="location"
                     name="location"
+                    className="form-input"
                     value={formData.location}
                     onChange={handleChange}
                     placeholder="City, District"
@@ -227,10 +273,11 @@ const ManageInstitution = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="address">Physical Address</label>
+                  <label htmlFor="address" className="form-label">Physical Address</label>
                   <textarea
                     id="address"
                     name="address"
+                    className="form-textarea"
                     value={formData.address}
                     onChange={handleChange}
                     rows="3"
@@ -238,42 +285,65 @@ const ManageInstitution = () => {
                   />
                 </div>
               </div>
+            </div>
 
-              {/* Contact Information */}
-              <div className="form-section">
-                <h3>Contact Information</h3>
+            {/* Contact Information */}
+            <div style={{ marginBottom: 'var(--spacing-xl)' }}>
+              <div className="card shadow-sm" style={{ 
+                background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)',
+                borderRadius: '12px',
+                padding: 'var(--spacing-lg)',
+                border: '1px solid rgba(59, 130, 246, 0.2)'
+              }}>
+                <h3 style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 'var(--spacing-sm)',
+                  margin: 0,
+                  marginBottom: 'var(--spacing-lg)',
+                  fontSize: '1.3rem',
+                  color: 'var(--primary-color)'
+                }}>
+                  <span className="icon-badge" style={{ fontSize: '1.3rem' }}>📞</span>
+                  Contact Information
+                </h3>
 
-                <div className="form-group">
-                  <label htmlFor="email">Email Address *</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    placeholder="info@institution.edu"
-                    required
-                  />
+                <div className="form-row">
+                  <div className="form-group">
+                    <label htmlFor="email" className="form-label form-label-required">Email Address</label>
+                    <input
+                      type="email"
+                      id="email"
+                      name="email"
+                      className="form-input"
+                      value={formData.email}
+                      onChange={handleChange}
+                      placeholder="info@institution.edu"
+                      required
+                    />
+                  </div>
+
+                  <div className="form-group">
+                    <label htmlFor="phone" className="form-label">Phone Number</label>
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      className="form-input"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      placeholder="+266 XXXX XXXX"
+                    />
+                  </div>
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="phone">Phone Number</label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleChange}
-                    placeholder="+266 XXXX XXXX"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="website">Website</label>
+                  <label htmlFor="website" className="form-label">Website</label>
                   <input
                     type="url"
                     id="website"
                     name="website"
+                    className="form-input"
                     value={formData.website}
                     onChange={handleChange}
                     placeholder="https://www.institution.edu"
@@ -281,10 +351,11 @@ const ManageInstitution = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="description">Description</label>
+                  <label htmlFor="description" className="form-label">Description</label>
                   <textarea
                     id="description"
                     name="description"
+                    className="form-textarea"
                     value={formData.description}
                     onChange={handleChange}
                     rows="6"
@@ -294,21 +365,30 @@ const ManageInstitution = () => {
               </div>
             </div>
 
-            <div className="form-actions">
+            <div style={{ 
+              display: 'flex', 
+              gap: 'var(--spacing-md)', 
+              justifyContent: 'flex-end',
+              marginTop: 'var(--spacing-xl)',
+              padding: 'var(--spacing-lg)',
+              backgroundColor: 'var(--background-secondary)',
+              borderRadius: '12px'
+            }}>
               <button
                 type="button"
                 onClick={() => navigate('/dashboard')}
-                className="btn btn-secondary"
+                className="btn btn-outline hover-scale-sm"
                 disabled={saving}
               >
-                Cancel
+                ❌ Cancel
               </button>
               <button
                 type="submit"
-                className="btn btn-primary"
+                className="btn btn-primary btn-lg hover-scale-sm"
                 disabled={saving}
+                style={{ minWidth: '160px' }}
               >
-                {saving ? 'Saving...' : 'Save Changes'}
+                {saving ? '⏳ Saving...' : '💾 Save Changes'}
               </button>
             </div>
           </form>

@@ -149,36 +149,115 @@ const ManageCourses = ({ user, institutionId }) => {
 
   return (
     <div className="theme-institute">
-      <div className="container" style={{ paddingTop: 'var(--spacing-lg)' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-lg)' }}>
-          <h1>Manage Courses</h1>
-          {!showForm && (
-            <button className="btn btn-primary" onClick={() => setShowForm(true)}>
-              + Create New Course
-            </button>
-          )}
+      <div className="container" style={{ paddingTop: 'var(--spacing-lg)', paddingBottom: 'var(--spacing-xl)' }}>
+        {/* Header with Gradient */}
+        <div className="card gradient-bg" style={{ 
+          padding: 'var(--spacing-xl)',
+          color: 'white',
+          marginBottom: 'var(--spacing-xl)',
+          borderRadius: '20px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
+            <div>
+              <h1 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '2rem' }}>
+                📚 Manage Courses
+              </h1>
+              <p style={{ margin: 0, opacity: 0.95, fontSize: '1.1rem' }}>
+                Create and manage your institution's course offerings
+              </p>
+            </div>
+            {!showForm && (
+              <button 
+                className="btn btn-lg"
+                onClick={() => setShowForm(true)}
+                style={{ 
+                  backgroundColor: 'white',
+                  color: 'var(--primary-color)',
+                  fontWeight: 600,
+                  padding: 'var(--spacing-md) var(--spacing-xl)',
+                  borderRadius: '12px',
+                  boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+                }}
+              >
+                ➕ Create New Course
+              </button>
+            )}
+          </div>
         </div>
 
-        <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
-          <label htmlFor="facultySelect" className="form-label">Select Faculty</label>
+        {/* Quick Stats */}
+        <div className="grid grid-3" style={{ marginBottom: 'var(--spacing-xl)' }}>
+          <div className="card shadow-md hover-lift transition-all" style={{ padding: 'var(--spacing-lg)', textAlign: 'center' }}>
+            <div className="icon-badge" style={{ margin: '0 auto var(--spacing-sm)', fontSize: '1.5rem' }}>
+              📖
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+              {courses.length}
+            </div>
+            <div className="text-muted" style={{ fontSize: '0.875rem' }}>Total Courses</div>
+          </div>
+
+          <div className="card shadow-md hover-lift transition-all" style={{ padding: 'var(--spacing-lg)', textAlign: 'center' }}>
+            <div className="icon-badge" style={{ margin: '0 auto var(--spacing-sm)', fontSize: '1.5rem' }}>
+              🏫
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+              {faculties.length}
+            </div>
+            <div className="text-muted" style={{ fontSize: '0.875rem' }}>Faculties</div>
+          </div>
+
+          <div className="card shadow-md hover-lift transition-all" style={{ padding: 'var(--spacing-lg)', textAlign: 'center' }}>
+            <div className="icon-badge" style={{ margin: '0 auto var(--spacing-sm)', fontSize: '1.5rem' }}>
+              ✨
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+              Active
+            </div>
+            <div className="text-muted" style={{ fontSize: '0.875rem' }}>Status</div>
+          </div>
+        </div>
+
+        {/* Faculty Selector */}
+        <div className="card shadow-md" style={{ marginBottom: 'var(--spacing-lg)', padding: 'var(--spacing-lg)', borderRadius: '12px' }}>
+          <label htmlFor="facultySelect" className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-md)' }}>
+            <span className="icon-badge" style={{ fontSize: '1.2rem' }}>🎓</span>
+            <span style={{ fontSize: '1.1rem', fontWeight: 600 }}>Select Faculty</span>
+          </label>
           <select
             id="facultySelect"
-            className="form-select"
+            className="form-input"
             value={selectedFaculty}
             onChange={(e) => setSelectedFaculty(e.target.value)}
+            style={{ fontSize: '1rem' }}
           >
             {faculties.map(faculty => (
               <option key={faculty.id} value={faculty.id}>
-                {faculty.name}
+                📚 {faculty.name}
               </option>
             ))}
           </select>
         </div>
 
         {showForm && (
-          <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
-            <h2>{editingCourse ? 'Edit Course' : 'Create New Course'}</h2>
-            <form onSubmit={handleSubmit}>
+          <div className="card shadow-md" style={{ 
+            marginBottom: 'var(--spacing-lg)',
+            borderRadius: '16px',
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, white 100%)',
+            border: '1px solid rgba(59, 130, 246, 0.2)'
+          }}>
+            <div style={{
+              padding: 'var(--spacing-lg)',
+              background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)',
+              borderRadius: '16px 16px 0 0',
+              marginBottom: 'var(--spacing-lg)'
+            }}>
+              <h2 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', color: 'var(--primary-color)' }}>
+                <span className="icon-badge" style={{ fontSize: '1.5rem' }}>{editingCourse ? '✏️' : '➕'}</span>
+                {editingCourse ? 'Edit Course' : 'Create New Course'}
+              </h2>
+            </div>
+            <form onSubmit={handleSubmit} style={{ padding: '0 var(--spacing-lg) var(--spacing-lg)' }}>
               <div className="form-group">
                 <label htmlFor="name" className="form-label form-label-required">Course Name</label>
                 <input
@@ -254,73 +333,123 @@ const ManageCourses = ({ user, institutionId }) => {
                 />
               </div>
 
-              <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-lg)' }}>
-                <button type="submit" className="btn btn-primary">
-                  {editingCourse ? 'Update Course' : 'Create Course'}
+              <div style={{ 
+                display: 'flex', 
+                gap: 'var(--spacing-md)', 
+                marginTop: 'var(--spacing-xl)',
+                padding: 'var(--spacing-md)',
+                backgroundColor: 'var(--background-secondary)',
+                borderRadius: '12px'
+              }}>
+                <button type="submit" className="btn btn-primary hover-scale-sm">
+                  {editingCourse ? '💾 Update Course' : '✨ Create Course'}
                 </button>
-                <button type="button" className="btn btn-secondary" onClick={handleCancel}>
-                  Cancel
+                <button type="button" className="btn btn-outline hover-scale-sm" onClick={handleCancel}>
+                  ❌ Cancel
                 </button>
               </div>
             </form>
           </div>
         )}
 
-        <div className="card">
-          <h2>Courses in {faculties.find(f => f.id === selectedFaculty)?.name} ({courses.length})</h2>
+        <div className="card shadow-md" style={{ borderRadius: '16px' }}>
+          <div style={{
+            padding: 'var(--spacing-lg)',
+            background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)',
+            borderRadius: '16px 16px 0 0',
+            borderBottom: '1px solid rgba(59, 130, 246, 0.2)'
+          }}>
+            <h2 style={{ 
+              margin: 0,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 'var(--spacing-sm)',
+              color: 'var(--primary-color)'
+            }}>
+              <span className="icon-badge" style={{ fontSize: '1.5rem' }}>📖</span>
+              Courses in {faculties.find(f => f.id === selectedFaculty)?.name}
+              <span style={{ 
+                marginLeft: 'auto',
+                fontSize: '1rem',
+                backgroundColor: 'var(--primary-color)',
+                color: 'white',
+                padding: '0.25rem 0.75rem',
+                borderRadius: '20px'
+              }}>
+                {courses.length}
+              </span>
+            </h2>
+          </div>
+          <div style={{ padding: 'var(--spacing-lg)' }}>
           {courses.length === 0 ? (
-            <p className="text-muted">No courses yet. Create your first course above!</p>
+            <p className="text-muted" style={{ margin: 0 }}>📋 No courses yet. Create your first course above!</p>
           ) : (
-            <div style={{ overflowX: 'auto' }}>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Course Name</th>
-                    <th>Level</th>
-                    <th>Duration</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {courses.map(course => (
-                    <tr key={course.id}>
-                      <td>
-                        <strong>{course.name}</strong>
-                        {course.description && (
-                          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                            {course.description.substring(0, 100)}
-                            {course.description.length > 100 && '...'}
-                          </div>
-                        )}
-                      </td>
-                      <td>
-                        <span className="badge badge-primary">
-                          {course.level}
+            <div className="grid grid-1" style={{ gap: 'var(--spacing-md)' }}>
+              {courses.map(course => (
+                <div
+                  key={course.id}
+                  className="card shadow-sm hover-lift transition-all"
+                  style={{
+                    padding: 'var(--spacing-lg)',
+                    background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, white 100%)',
+                    borderRadius: '12px',
+                    border: '1px solid rgba(59, 130, 246, 0.15)'
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', gap: 'var(--spacing-md)', flexWrap: 'wrap' }}>
+                    <div style={{ flex: 1 }}>
+                      <h3 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', color: 'var(--primary-color)', fontSize: '1.2rem' }}>
+                        📚 {course.name}
+                      </h3>
+                      {course.description && (
+                        <p style={{ margin: 0, marginBottom: 'var(--spacing-md)', color: 'var(--text-secondary)', fontSize: '0.95rem', lineHeight: 1.5 }}>
+                          {course.description.substring(0, 150)}
+                          {course.description.length > 150 && '...'}
+                        </p>
+                      )}
+                      <div style={{ display: 'flex', gap: 'var(--spacing-md)', flexWrap: 'wrap', marginTop: 'var(--spacing-md)' }}>
+                        <span className="badge" style={{ 
+                          backgroundColor: 'var(--primary-color)', 
+                          color: 'white',
+                          padding: '0.35rem 0.75rem',
+                          borderRadius: '20px',
+                          fontSize: '0.85rem',
+                          fontWeight: 600
+                        }}>
+                          🎓 {course.level}
                         </span>
-                      </td>
-                      <td>{course.duration}</td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                          <button
-                            className="btn btn-sm btn-secondary"
-                            onClick={() => handleEdit(course)}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            className="btn btn-sm btn-danger"
-                            onClick={() => handleDelete(course.id)}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                        <span className="badge" style={{ 
+                          backgroundColor: 'var(--success-color)', 
+                          color: 'white',
+                          padding: '0.35rem 0.75rem',
+                          borderRadius: '20px',
+                          fontSize: '0.85rem',
+                          fontWeight: 600
+                        }}>
+                          ⏱️ {course.duration}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
+                      <button
+                        className="btn btn-sm btn-outline hover-scale-sm"
+                        onClick={() => handleEdit(course)}
+                      >
+                        ✏️ Edit
+                      </button>
+                      <button
+                        className="btn btn-sm btn-danger hover-scale-sm"
+                        onClick={() => handleDelete(course.id)}
+                      >
+                        🗑️ Delete
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
+          </div>
         </div>
       </div>
       <Footer />
