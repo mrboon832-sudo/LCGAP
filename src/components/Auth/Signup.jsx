@@ -4,7 +4,7 @@ import {
   sendEmailVerification
 } from 'firebase/auth';
 import { auth } from '../../services/firebase';
-import { createUserProfile, createCompany } from '../../services/api';
+import { createUserProfile, createCompany, createInstitution } from '../../services/api';
 import featureFlags from '../../config/featureFlags';
 import { useNavigate, Link } from 'react-router-dom';
 import Footer from '../Layout/Footer';
@@ -29,7 +29,8 @@ const Signup = () => {
     role: 'student',
     phone: '',
     bio: '',
-    companyName: ''
+    companyName: '',
+    institutionName: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -107,6 +108,28 @@ const Signup = () => {
         profileData.companyId = companyId;
         profileData.companyName = formData.companyName;
         profileData.profile.companyName = formData.companyName;
+      }
+
+      // Create institution document and link institutionId for institution representatives
+      if (formData.role === 'institute' && formData.institutionName) {
+        // Create institution document in institutions collection
+        const institutionId = await createInstitution({
+          name: formData.institutionName,
+          contactInfo: {
+            email: formData.email,
+            phone: formData.phone
+          },
+          contactPerson: formData.displayName,
+          type: 'university', // default type
+          location: '',
+          description: '',
+          createdBy: userCredential.user.uid
+        });
+        
+        // Add institution info to profile
+        profileData.institutionId = institutionId;
+        profileData.institutionName = formData.institutionName;
+        profileData.profile.institutionName = formData.institutionName;
       }
 
       await createUserProfile(userCredential.user.uid, profileData);
@@ -335,6 +358,25 @@ const Signup = () => {
                 onChange={handleChange}
                 required={formData.role === 'company'}
                 placeholder="Enter your company name"
+              />
+            </div>
+          )}
+
+          {/* Institution Name - Only show for institution representatives */}
+          {formData.role === 'institute' && (
+            <div className="form-group">
+              <label htmlFor="institutionName" className="form-label form-label-required">
+                Institution Name
+              </label>
+              <input
+                type="text"
+                id="institutionName"
+                name="institutionName"
+                className="form-input"
+                value={formData.institutionName}
+                onChange={handleChange}
+                required={formData.role === 'institute'}
+                placeholder="Enter your institution name"
               />
             </div>
           )}
