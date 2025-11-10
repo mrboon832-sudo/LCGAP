@@ -248,23 +248,125 @@ const StudentProfile = () => {
     );
   }
 
+  const cgpa = calculateCGPA();
+  const profileCompletion = ((
+    (formData.displayName ? 20 : 0) +
+    (formData.phone ? 10 : 0) +
+    (formData.bio ? 15 : 0) +
+    (formData.highSchool.name ? 15 : 0) +
+    (formData.highSchool.subjects.length > 0 ? 20 : 0) +
+    (formData.certificates.length > 0 ? 10 : 0) +
+    (formData.workExperience.length > 0 ? 10 : 0)
+  ));
+
   return (
-    <div className="student-theme">
+    <div className="theme-student">
       <div className="container" style={{ paddingTop: 'var(--spacing-lg)', paddingBottom: 'var(--spacing-xl)' }}>
-        <div className="card">
-          <div className="card-header">
-            <h1 className="card-title">My Profile</h1>
-            <p className="text-muted">Complete your profile to improve your application chances</p>
+        {/* Header with Gradient */}
+        <div className="card gradient-bg" style={{ 
+          padding: 'var(--spacing-xl)',
+          color: 'white',
+          marginBottom: 'var(--spacing-xl)',
+          borderRadius: '20px'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', flexWrap: 'wrap', gap: 'var(--spacing-md)' }}>
+            <div>
+              <h1 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '2rem' }}>
+                👤 My Profile
+              </h1>
+              <p style={{ margin: 0, opacity: 0.95, fontSize: '1.1rem' }}>
+                Complete your profile to improve your application chances
+              </p>
+            </div>
+            <div style={{ 
+              textAlign: 'center',
+              padding: 'var(--spacing-md)',
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '12px',
+              backdropFilter: 'blur(10px)',
+              minWidth: '120px'
+            }}>
+              <div style={{ fontSize: '2rem', fontWeight: 'bold', marginBottom: '0.25rem' }}>
+                {profileCompletion}%
+              </div>
+              <div style={{ fontSize: '0.9rem', opacity: 0.9 }}>Complete</div>
+            </div>
+          </div>
+          {/* Progress Bar */}
+          <div style={{ marginTop: 'var(--spacing-lg)' }}>
+            <div className="progress" style={{ backgroundColor: 'rgba(255, 255, 255, 0.3)', height: '12px' }}>
+              <div 
+                className="progress-bar" 
+                style={{ 
+                  width: `${profileCompletion}%`,
+                  backgroundColor: 'white',
+                  transition: 'width 0.5s ease'
+                }}
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-4" style={{ marginBottom: 'var(--spacing-xl)' }}>
+          <div className="card shadow-md hover-lift transition-all" style={{ padding: 'var(--spacing-lg)', textAlign: 'center' }}>
+            <div className="icon-badge" style={{ margin: '0 auto var(--spacing-sm)', fontSize: '1.5rem' }}>
+              📊
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+              {cgpa}
+            </div>
+            <div className="text-muted" style={{ fontSize: '0.875rem' }}>CGPA</div>
           </div>
 
+          <div className="card shadow-md hover-lift transition-all" style={{ padding: 'var(--spacing-lg)', textAlign: 'center' }}>
+            <div className="icon-badge" style={{ margin: '0 auto var(--spacing-sm)', fontSize: '1.5rem' }}>
+              📚
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+              {formData.highSchool.subjects.length}
+            </div>
+            <div className="text-muted" style={{ fontSize: '0.875rem' }}>Subjects</div>
+          </div>
+
+          <div className="card shadow-md hover-lift transition-all" style={{ padding: 'var(--spacing-lg)', textAlign: 'center' }}>
+            <div className="icon-badge" style={{ margin: '0 auto var(--spacing-sm)', fontSize: '1.5rem' }}>
+              🏆
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+              {formData.certificates.length}
+            </div>
+            <div className="text-muted" style={{ fontSize: '0.875rem' }}>Certificates</div>
+          </div>
+
+          <div className="card shadow-md hover-lift transition-all" style={{ padding: 'var(--spacing-lg)', textAlign: 'center' }}>
+            <div className="icon-badge" style={{ margin: '0 auto var(--spacing-sm)', fontSize: '1.5rem' }}>
+              💼
+            </div>
+            <div style={{ fontSize: '1.5rem', fontWeight: 'bold', color: 'var(--primary-color)' }}>
+              {formData.workExperience.length}
+            </div>
+            <div className="text-muted" style={{ fontSize: '0.875rem' }}>Experience</div>
+          </div>
+        </div>
+
+        <div className="card shadow-md" style={{ borderRadius: '16px' }}>
           {error && (
-            <div className="alert alert-danger" role="alert">
+            <div className="alert alert-danger shadow-md" role="alert" style={{ 
+              borderRadius: '12px',
+              border: '1px solid #fee2e2',
+              margin: 'var(--spacing-lg)'
+            }}>
               {error}
             </div>
           )}
 
           {success && (
-            <div className="alert alert-success" role="alert">
+            <div className="alert alert-success shadow-md" role="alert" style={{ 
+              borderRadius: '12px',
+              border: '1px solid #d1fae5',
+              margin: 'var(--spacing-lg)'
+            }}>
               {success}
             </div>
           )}
@@ -272,7 +374,25 @@ const StudentProfile = () => {
           <form onSubmit={handleSave}>
             {/* Basic Information */}
             <section className="form-section">
-              <h2 className="form-section-title">Basic Information</h2>
+              <div className="card shadow-md" style={{ 
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
+                borderRadius: '12px',
+                padding: 'var(--spacing-lg)',
+                marginBottom: 'var(--spacing-xl)',
+                border: '1px solid rgba(16, 185, 129, 0.2)'
+              }}>
+                <h2 style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 'var(--spacing-sm)',
+                  margin: 0,
+                  marginBottom: 'var(--spacing-lg)',
+                  fontSize: '1.5rem',
+                  color: 'var(--primary-color)'
+                }}>
+                  <span className="icon-badge" style={{ fontSize: '1.5rem' }}>📋</span>
+                  Basic Information
+                </h2>
               
               <div className="form-group">
                 <label htmlFor="displayName" className="form-label form-label-required">
@@ -336,11 +456,30 @@ const StudentProfile = () => {
                   rows="4"
                 />
               </div>
+              </div>
             </section>
 
             {/* High School Information */}
             <section className="form-section">
-              <h2 className="form-section-title">High School / Secondary Education</h2>
+              <div className="card shadow-md" style={{ 
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
+                borderRadius: '12px',
+                padding: 'var(--spacing-lg)',
+                marginBottom: 'var(--spacing-xl)',
+                border: '1px solid rgba(16, 185, 129, 0.2)'
+              }}>
+                <h2 style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 'var(--spacing-sm)',
+                  margin: 0,
+                  marginBottom: 'var(--spacing-lg)',
+                  fontSize: '1.5rem',
+                  color: 'var(--primary-color)'
+                }}>
+                  <span className="icon-badge" style={{ fontSize: '1.5rem' }}>🎓</span>
+                  High School / Secondary Education
+                </h2>
               
               <div className="form-row">
                 <div className="form-group">
@@ -479,14 +618,33 @@ const StudentProfile = () => {
                   ))}
                 </div>
               </div>
+              </div>
             </section>
 
             {/* Certificates */}
             <section className="form-section">
-              <h2 className="form-section-title">Certificates & Qualifications</h2>
+              <div className="card shadow-md" style={{ 
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
+                borderRadius: '12px',
+                padding: 'var(--spacing-lg)',
+                marginBottom: 'var(--spacing-xl)',
+                border: '1px solid rgba(16, 185, 129, 0.2)'
+              }}>
+                <h2 style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 'var(--spacing-sm)',
+                  margin: 0,
+                  marginBottom: 'var(--spacing-lg)',
+                  fontSize: '1.5rem',
+                  color: 'var(--primary-color)'
+                }}>
+                  <span className="icon-badge" style={{ fontSize: '1.5rem' }}>🏆</span>
+                  Certificates & Qualifications
+                </h2>
               
-              <div className="card" style={{ backgroundColor: 'var(--background-secondary)', marginBottom: 'var(--spacing-md)' }}>
-                <h3 style={{ marginBottom: 'var(--spacing-md)', fontSize: '1rem' }}>Add New Certificate</h3>
+              <div className="card shadow-sm" style={{ backgroundColor: 'white', marginBottom: 'var(--spacing-md)', padding: 'var(--spacing-lg)', borderRadius: '12px' }}>
+                <h3 style={{ marginBottom: 'var(--spacing-md)', fontSize: '1rem', fontWeight: 600 }}>Add New Certificate</h3>
                 
                 <div className="form-row">
                   <div className="form-group">
@@ -535,57 +693,76 @@ const StudentProfile = () => {
 
                 <button
                   type="button"
-                  className="btn btn-primary"
+                  className="btn btn-primary hover-scale-sm"
                   onClick={addCertificate}
                 >
-                  Add Certificate
+                  ✨ Add Certificate
                 </button>
               </div>
 
               {/* List of Certificates */}
               {formData.certificates.length > 0 && (
-                <div>
-                  <h3 style={{ marginBottom: 'var(--spacing-md)', fontSize: '1rem' }}>Your Certificates</h3>
+                <div style={{ marginTop: 'var(--spacing-lg)' }}>
+                  <h3 style={{ marginBottom: 'var(--spacing-md)', fontSize: '1rem', fontWeight: 600 }}>Your Certificates ({formData.certificates.length})</h3>
                   {formData.certificates.map((cert) => (
                     <div
                       key={cert.id}
-                      className="card"
-                      style={{ marginBottom: 'var(--spacing-md)', position: 'relative' }}
+                      className="card shadow-sm hover-lift transition-all"
+                      style={{ marginBottom: 'var(--spacing-md)', position: 'relative', backgroundColor: 'white', borderRadius: '12px' }}
                     >
                       <button
                         type="button"
                         onClick={() => removeCertificate(cert.id)}
-                        className="btn btn-danger"
+                        className="btn btn-danger btn-sm hover-scale-sm"
                         style={{ position: 'absolute', top: 'var(--spacing-sm)', right: 'var(--spacing-sm)' }}
                       >
-                        Remove
+                        🗑️ Remove
                       </button>
-                      <h4 style={{ marginBottom: 'var(--spacing-xs)', color: 'var(--primary-color)' }}>
-                        {cert.name}
+                      <h4 style={{ marginBottom: 'var(--spacing-xs)', color: 'var(--primary-color)', fontSize: '1.1rem', fontWeight: 600 }}>
+                        🏆 {cert.name}
                       </h4>
                       <p style={{ marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}>
                         {cert.issuer}
                       </p>
                       {cert.dateIssued && (
                         <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: 'var(--spacing-xs)' }}>
-                          Issued: {new Date(cert.dateIssued).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+                          📅 Issued: {new Date(cert.dateIssued).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
                         </p>
                       )}
                       {cert.description && (
-                        <p style={{ marginTop: 'var(--spacing-sm)' }}>{cert.description}</p>
+                        <p style={{ marginTop: 'var(--spacing-sm)', fontSize: '0.95rem' }}>{cert.description}</p>
                       )}
                     </div>
                   ))}
                 </div>
               )}
+              </div>
             </section>
 
             {/* Work Experience */}
             <section className="form-section">
-              <h2 className="form-section-title">Work Experience</h2>
+              <div className="card shadow-md" style={{ 
+                background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(16, 185, 129, 0.05) 100%)',
+                borderRadius: '12px',
+                padding: 'var(--spacing-lg)',
+                marginBottom: 'var(--spacing-xl)',
+                border: '1px solid rgba(16, 185, 129, 0.2)'
+              }}>
+                <h2 style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: 'var(--spacing-sm)',
+                  margin: 0,
+                  marginBottom: 'var(--spacing-lg)',
+                  fontSize: '1.5rem',
+                  color: 'var(--primary-color)'
+                }}>
+                  <span className="icon-badge" style={{ fontSize: '1.5rem' }}>💼</span>
+                  Work Experience
+                </h2>
               
-              <div className="card" style={{ backgroundColor: 'var(--background-secondary)', marginBottom: 'var(--spacing-md)' }}>
-                <h3 style={{ marginBottom: 'var(--spacing-md)', fontSize: '1rem' }}>Add Work Experience</h3>
+              <div className="card shadow-sm" style={{ backgroundColor: 'white', marginBottom: 'var(--spacing-md)', padding: 'var(--spacing-lg)', borderRadius: '12px' }}>
+                <h3 style={{ marginBottom: 'var(--spacing-md)', fontSize: '1rem', fontWeight: 600 }}>Add Work Experience</h3>
                 
                 <div className="form-row">
                   <div className="form-group">
@@ -673,66 +850,76 @@ const StudentProfile = () => {
 
                 <button
                   type="button"
-                  className="btn btn-primary"
+                  className="btn btn-primary hover-scale-sm"
                   onClick={addWorkExperience}
                 >
-                  Add Work Experience
+                  ✨ Add Work Experience
                 </button>
               </div>
 
               {/* List of Work Experience */}
               {formData.workExperience.length > 0 && (
-                <div>
-                  <h3 style={{ marginBottom: 'var(--spacing-md)', fontSize: '1rem' }}>Your Work Experience</h3>
+                <div style={{ marginTop: 'var(--spacing-lg)' }}>
+                  <h3 style={{ marginBottom: 'var(--spacing-md)', fontSize: '1rem', fontWeight: 600 }}>Your Work Experience ({formData.workExperience.length})</h3>
                   {formData.workExperience.map((exp) => (
                     <div
                       key={exp.id}
-                      className="card"
-                      style={{ marginBottom: 'var(--spacing-md)', position: 'relative' }}
+                      className="card shadow-sm hover-lift transition-all"
+                      style={{ marginBottom: 'var(--spacing-md)', position: 'relative', backgroundColor: 'white', borderRadius: '12px' }}
                     >
                       <button
                         type="button"
                         onClick={() => removeWorkExperience(exp.id)}
-                        className="btn btn-danger"
+                        className="btn btn-danger btn-sm hover-scale-sm"
                         style={{ position: 'absolute', top: 'var(--spacing-sm)', right: 'var(--spacing-sm)' }}
                       >
-                        Remove
+                        🗑️ Remove
                       </button>
-                      <h4 style={{ marginBottom: 'var(--spacing-xs)', color: 'var(--primary-color)' }}>
-                        {exp.title}
+                      <h4 style={{ marginBottom: 'var(--spacing-xs)', color: 'var(--primary-color)', fontSize: '1.1rem', fontWeight: 600 }}>
+                        💼 {exp.title}
                       </h4>
-                      <p style={{ marginBottom: 'var(--spacing-xs)', fontWeight: 500 }}>
-                        {exp.company} {exp.location && `• ${exp.location}`}
+                      <p style={{ marginBottom: 'var(--spacing-xs)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+                        🏢 {exp.company} {exp.location && <><span style={{ color: 'var(--text-muted)' }}>•</span> 📍 {exp.location}</>}
                       </p>
                       <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: 'var(--spacing-xs)' }}>
-                        {exp.startDate && new Date(exp.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                        📅 {exp.startDate && new Date(exp.startDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                         {' - '}
-                        {exp.current ? 'Present' : (exp.endDate && new Date(exp.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }))}
+                        {exp.current ? <span style={{ color: 'var(--primary-color)', fontWeight: 600 }}>Present</span> : (exp.endDate && new Date(exp.endDate).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }))}
                       </p>
                       {exp.description && (
-                        <p style={{ marginTop: 'var(--spacing-sm)' }}>{exp.description}</p>
+                        <p style={{ marginTop: 'var(--spacing-sm)', fontSize: '0.95rem' }}>{exp.description}</p>
                       )}
                     </div>
                   ))}
                 </div>
               )}
+              </div>
             </section>
 
             {/* Save Button */}
-            <div style={{ display: 'flex', gap: 'var(--spacing-md)', justifyContent: 'flex-end' }}>
+            <div style={{ 
+              display: 'flex', 
+              gap: 'var(--spacing-md)', 
+              justifyContent: 'flex-end',
+              marginTop: 'var(--spacing-xl)',
+              padding: 'var(--spacing-lg)',
+              backgroundColor: 'var(--background-secondary)',
+              borderRadius: '12px'
+            }}>
               <button
                 type="button"
-                className="btn btn-outline"
+                className="btn btn-outline hover-scale-sm"
                 onClick={() => navigate('/profile')}
               >
-                Cancel
+                ❌ Cancel
               </button>
               <button
                 type="submit"
-                className="btn btn-primary btn-lg"
+                className="btn btn-primary btn-lg hover-scale-sm"
                 disabled={saving}
+                style={{ minWidth: '160px' }}
               >
-                {saving ? 'Saving...' : 'Save Profile'}
+                {saving ? '⏳ Saving...' : '💾 Save Profile'}
               </button>
             </div>
           </form>
