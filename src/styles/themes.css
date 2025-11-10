@@ -244,3 +244,206 @@
   color: white !important;
   text-decoration: none;
 }
+
+/* ==================== MODERN UI UTILITIES ==================== */
+
+/* Gradient Backgrounds */
+.theme-student .gradient-bg {
+  background: linear-gradient(135deg, var(--student-primary) 0%, var(--student-primary-dark) 100%);
+}
+
+.theme-institute .gradient-bg {
+  background: linear-gradient(135deg, var(--institute-primary) 0%, var(--institute-primary-dark) 100%);
+}
+
+.theme-company .gradient-bg {
+  background: linear-gradient(135deg, var(--company-primary) 0%, var(--company-primary-dark) 100%);
+}
+
+.theme-admin .gradient-bg {
+  background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-dark) 100%);
+}
+
+/* Modern Box Shadows */
+.shadow-sm {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-md {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.shadow-lg {
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.shadow-xl {
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+/* Themed Shadows */
+.theme-student .shadow-primary {
+  box-shadow: 0 8px 24px rgba(16, 185, 129, 0.25);
+}
+
+.theme-institute .shadow-primary {
+  box-shadow: 0 8px 24px rgba(59, 130, 246, 0.25);
+}
+
+.theme-company .shadow-primary {
+  box-shadow: 0 8px 24px rgba(139, 92, 246, 0.25);
+}
+
+.theme-admin .shadow-primary {
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.25);
+}
+
+/* Smooth Transitions */
+.transition-all {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-transform {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.transition-colors {
+  transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
+
+/* Hover Effects */
+.hover-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+.hover-scale-sm:hover {
+  transform: scale(1.02);
+}
+
+/* Glassmorphism */
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.glass-dark {
+  background: rgba(0, 0, 0, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Badge Styles */
+.badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.badge-success {
+  background-color: #d1fae5;
+  color: #065f46;
+}
+
+.badge-warning {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge-danger {
+  background-color: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-info {
+  background-color: #dbeafe;
+  color: #1e40af;
+}
+
+/* Progress Bars */
+.progress {
+  height: 8px;
+  background-color: #e5e7eb;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+.theme-student .progress-bar {
+  background: linear-gradient(90deg, var(--student-primary) 0%, var(--student-accent) 100%);
+}
+
+.theme-institute .progress-bar {
+  background: linear-gradient(90deg, var(--institute-primary) 0%, var(--institute-accent) 100%);
+}
+
+.theme-company .progress-bar {
+  background: linear-gradient(90deg, var(--company-primary) 0%, var(--company-accent) 100%);
+}
+
+.theme-admin .progress-bar {
+  background: linear-gradient(90deg, var(--admin-primary) 0%, var(--admin-accent) 100%);
+}
+
+/* Icon Badges */
+.icon-badge {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+}
+
+.theme-student .icon-badge {
+  background: linear-gradient(135deg, var(--student-primary) 0%, var(--student-accent) 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.theme-institute .icon-badge {
+  background: linear-gradient(135deg, var(--institute-primary) 0%, var(--institute-accent) 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.theme-company .icon-badge {
+  background: linear-gradient(135deg, var(--company-primary) 0%, var(--company-accent) 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.theme-admin .icon-badge {
+  background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-accent) 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+}
+
+/* Rounded Corners */
+.rounded-sm { border-radius: 4px; }
+.rounded { border-radius: 8px; }
+.rounded-md { border-radius: 12px; }
+.rounded-lg { border-radius: 16px; }
+.rounded-xl { border-radius: 20px; }
+.rounded-full { border-radius: 9999px; }
+
+/* Text Utilities */
+.text-gradient {
+  background: linear-gradient(135deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
