@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db, auth } from '../../services/firebase';
-import { updateApplicationStatus } from '../../services/api';
+import { updateApplicationStatus, selectFinalAdmission } from '../../services/api';
 import { Link } from 'react-router-dom';
 import Footer from '../Layout/Footer';
 import '../../styles/base.css';
@@ -123,6 +123,35 @@ const ApplicationsPage = ({ user }) => {
     }
   };
 
+  const handleSelectFinalAdmission = async (appId) => {
+    const acceptedApps = applications.filter(app => app.status === 'accepted');
+    
+    if (acceptedApps.length <= 1) {
+      setError('You only have one acceptance. No need to select.');
+      return;
+    }
+    
+    if (!window.confirm('Are you sure you want to confirm this as your FINAL admission? All other acceptances will be automatically declined and those spots will go to waiting list students.')) {
+      return;
+    }
+    
+    setProcessingApp(appId);
+    setError('');
+    setSuccess('');
+    
+    try {
+      const currentUser = auth.currentUser;
+      const result = await selectFinalAdmission(currentUser.uid, appId);
+      setSuccess(result.message);
+      fetchApplications(); // Refresh the list
+    } catch (err) {
+      console.error('Error selecting final admission:', err);
+      setError(err.message || 'Failed to select final admission. Please try again.');
+    } finally {
+      setProcessingApp(null);
+    }
+  };
+
   const handleRejectAdmission = async (appId) => {
     if (!window.confirm('Are you sure you want to reject this admission offer? This action cannot be undone.')) {
       return;
@@ -210,6 +239,25 @@ const ApplicationsPage = ({ user }) => {
       {success && (
         <div className="alert alert-success">
           {success}
+        </div>
+      )}
+
+      {/* Multiple Acceptances Warning */}
+      {user.role === 'student' && applications.filter(app => app.status === 'accepted' && !app.finalAdmissionConfirmed).length > 1 && (
+        <div className="alert alert-warning" style={{ marginBottom: 'var(--spacing-lg)' }}>
+          <h4 style={{ marginBottom: 'var(--spacing-sm)' }}>⚠️ Multiple Acceptances Detected</h4>
+          <p>
+            You have been accepted to {applications.filter(app => app.status === 'accepted').length} institutions. 
+            You must select ONE final admission. When you confirm your choice:
+          </p>
+          <ul style={{ marginLeft: 'var(--spacing-lg)', marginTop: 'var(--spacing-sm)' }}>
+            <li>Your other acceptances will be automatically declined</li>
+            <li>Students on the waiting lists will be promoted to take your declined spots</li>
+            <li>This action cannot be undone</li>
+          </ul>
+          <p style={{ marginTop: 'var(--spacing-sm)', fontWeight: 600 }}>
+            Please review your acceptances below and click "Select as Final Admission" on your preferred institution.
+          </p>
         </div>
       )}
 
@@ -382,15 +430,26 @@ const ApplicationsPage = ({ user }) => {
                     <button className="btn btn-danger">Reject</button>
                   </>
                 )}
-                {user.role === 'student' && app.type === 'course' && app.status === 'accepted' && (
+                {user.role === 'student' && app.type === 'course' && app.status === 'accepted' && !app.finalAdmissionConfirmed && (
                   <>
-                    <button 
-                      className="btn btn-success"
-                      onClick={() => handleAcceptAdmission(app.id)}
-                      disabled={processingApp === app.id}
-                    >
-                      {processingApp === app.id ? 'Processing...' : 'Accept Admission'}
-                    </button>
+                    {applications.filter(a => a.status === 'accepted').length > 1 ? (
+                      <button 
+                        className="btn btn-primary"
+                        onClick={() => handleSelectFinalAdmission(app.id)}
+                        disabled={processingApp === app.id}
+                        style={{ fontWeight: 600 }}
+                      >
+                        {processingApp === app.id ? 'Processing...' : '✓ Select as Final Admission'}
+                      </button>
+                    ) : (
+                      <button 
+                        className="btn btn-success"
+                        onClick={() => handleAcceptAdmission(app.id)}
+                        disabled={processingApp === app.id}
+                      >
+                        {processingApp === app.id ? 'Processing...' : 'Accept Admission'}
+                      </button>
+                    )}
                     <button 
                       className="btn btn-danger"
                       onClick={() => handleRejectAdmission(app.id)}

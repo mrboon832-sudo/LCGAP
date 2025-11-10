@@ -185,6 +185,59 @@ export const applyToCourse = async (studentId, institutionId, courseId, applicat
     throw new Error('You have already applied to this course');
   }
 
+  // Check if student already has an accepted admission at this institution
+  const acceptedQuery = query(
+    collection(db, 'applications'),
+    where('studentId', '==', studentId),
+    where('institutionId', '==', institutionId),
+    where('status', '==', 'accepted')
+  );
+  const acceptedSnap = await getDocs(acceptedQuery);
+  if (!acceptedSnap.empty) {
+    throw new Error('You already have an accepted admission at this institution. Students cannot be admitted to multiple programs at the same institution.');
+  }
+
+  // Get course details to check requirements
+  const courseRef = doc(db, 'courses', courseId);
+  const courseSnap = await getDoc(courseRef);
+  
+  if (courseSnap.exists()) {
+    const course = courseSnap.data();
+    const requirements = course.requirements || '';
+    
+    // Get student profile to check qualifications
+    const studentRef = doc(db, 'users', studentId);
+    const studentSnap = await getDoc(studentRef);
+    
+    if (studentSnap.exists()) {
+      const student = studentSnap.data();
+      const studentGPA = parseFloat(student.academicPerformance?.gpa || student.highSchool?.gpa || 0);
+      
+      // Basic qualification check: if course has minimum GPA requirement
+      if (requirements.toLowerCase().includes('gpa')) {
+        // Extract GPA requirement (e.g., "Minimum GPA: 3.0" or "GPA 2.5+")
+        const gpaMatch = requirements.match(/(\d+\.?\d*)/);
+        if (gpaMatch) {
+          const requiredGPA = parseFloat(gpaMatch[1]);
+          if (studentGPA < requiredGPA) {
+            throw new Error(`You do not meet the minimum GPA requirement of ${requiredGPA} for this course. Your GPA: ${studentGPA}`);
+          }
+        }
+      }
+      
+      // Check if course requires specific level
+      if (course.level && student.academicPerformance?.level) {
+        const levelHierarchy = ['high school', 'certificate', 'diploma', 'undergraduate', 'postgraduate', 'masters', 'doctorate'];
+        const studentLevelIndex = levelHierarchy.indexOf(student.academicPerformance.level.toLowerCase());
+        const courseLevelIndex = levelHierarchy.indexOf(course.level.toLowerCase());
+        
+        if (studentLevelIndex !== -1 && courseLevelIndex !== -1 && studentLevelIndex > courseLevelIndex) {
+          throw new Error(`You are overqualified for this ${course.level} program. Please apply to programs matching your ${student.academicPerformance.level} level.`);
+        }
+      }
+    }
+  }
+
   // Get or create applicationsByInstitution doc
   const instAppRef = doc(db, 'users', studentId, 'applicationsByInstitution', institutionId);
   const instAppSnap = await getDoc(instAppRef);
@@ -262,18 +315,19 @@ export const updateApplicationStatus = async (appId, status, options = {}) => {
   
   const appData = appSnap.data();
   
-  // If changing to 'accepted', check for existing final admission
+  // If changing to 'accepted', check for existing final admission at THIS institution
   if (status === 'accepted') {
-    // Check if student already has an accepted admission
+    // Check if student already has an accepted admission at this institution
     const existingAcceptedQuery = query(
       collection(db, 'applications'),
       where('studentId', '==', appData.studentId),
+      where('institutionId', '==', appData.institutionId),
       where('status', '==', 'accepted')
     );
     const existingAccepted = await getDocs(existingAcceptedQuery);
     
     if (!existingAccepted.empty) {
-      throw new Error('Student already has an accepted admission. Only one final admission is allowed.');
+      throw new Error('Student already has an accepted admission at this institution. Cannot admit the same student to multiple programs at one institution.');
     }
   }
   
@@ -324,6 +378,96 @@ const promoteFromWaitingList = async (institutionId, courseId) => {
       read: false
     });
   }
+};
+
+// Select final admission - student confirms which institution they will attend
+export const selectFinalAdmission = async (studentId, selectedAppId) => {
+  // Get the selected application
+  const selectedAppRef = doc(db, 'applications', selectedAppId);
+  const selectedAppSnap = await getDoc(selectedAppRef);
+  
+  if (!selectedAppSnap.exists()) {
+    throw new Error('Application not found');
+  }
+  
+  const selectedApp = selectedAppSnap.data();
+  
+  if (selectedApp.studentId !== studentId) {
+    throw new Error('Unauthorized: This application does not belong to you');
+  }
+  
+  if (selectedApp.status !== 'accepted') {
+    throw new Error('You can only select from accepted admissions');
+  }
+  
+  // Get all accepted applications for this student
+  const acceptedQuery = query(
+    collection(db, 'applications'),
+    where('studentId', '==', studentId),
+    where('status', '==', 'accepted')
+  );
+  const acceptedSnap = await getDocs(acceptedQuery);
+  
+  if (acceptedSnap.size <= 1) {
+    // Only one admission, mark as confirmed
+    await updateDoc(selectedAppRef, {
+      finalAdmissionConfirmed: true,
+      confirmedAt: serverTimestamp()
+    });
+    return { message: 'Admission confirmed!' };
+  }
+  
+  // Multiple admissions - reject others and promote from waiting lists
+  const batch = writeBatch(db);
+  const waitlistPromotions = [];
+  
+  for (const appDoc of acceptedSnap.docs) {
+    if (appDoc.id === selectedAppId) {
+      // Mark selected admission as confirmed
+      batch.update(doc(db, 'applications', appDoc.id), {
+        finalAdmissionConfirmed: true,
+        confirmedAt: serverTimestamp()
+      });
+    } else {
+      // Reject other acceptances
+      const otherApp = appDoc.data();
+      batch.update(doc(db, 'applications', appDoc.id), {
+        status: 'declined_by_student',
+        declinedAt: serverTimestamp(),
+        reason: 'Student selected another institution'
+      });
+      
+      // Queue waiting list promotion for declined institutions
+      waitlistPromotions.push({
+        institutionId: otherApp.institutionId,
+        courseId: otherApp.courseId
+      });
+      
+      // Create notification for declined institution
+      if (otherApp.institutionId) {
+        await createNotification({
+          userId: otherApp.institutionId, // This would need institution user ID
+          type: 'student_declined',
+          title: 'Student Declined Admission',
+          message: `A student has declined their admission offer for ${otherApp.courseName}`,
+          link: '/manage-applications',
+          read: false
+        });
+      }
+    }
+  }
+  
+  await batch.commit();
+  
+  // Promote students from waiting lists for declined institutions
+  for (const promo of waitlistPromotions) {
+    await promoteFromWaitingList(promo.institutionId, promo.courseId);
+  }
+  
+  return { 
+    message: 'Final admission confirmed! Other acceptances have been declined and waiting list students have been promoted.',
+    promotedWaitlists: waitlistPromotions.length
+  };
 };
 
 // Company operations
