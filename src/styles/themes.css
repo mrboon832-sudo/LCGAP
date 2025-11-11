@@ -250,18 +250,68 @@
 /* Gradient Backgrounds */
 .theme-student .gradient-bg {
   background: linear-gradient(135deg, var(--student-primary) 0%, var(--student-primary-dark) 100%);
+  color: #ffffff;
 }
 
 .theme-institute .gradient-bg {
   background: linear-gradient(135deg, var(--institute-primary) 0%, var(--institute-primary-dark) 100%);
+  color: #ffffff;
 }
 
 .theme-company .gradient-bg {
   background: linear-gradient(135deg, var(--company-primary) 0%, var(--company-primary-dark) 100%);
+  color: #ffffff;
 }
 
 .theme-admin .gradient-bg {
   background: linear-gradient(135deg, var(--admin-primary) 0%, var(--admin-primary-dark) 100%);
+  color: #ffffff;
+}
+
+.gradient-bg h1,
+.gradient-bg h2,
+.gradient-bg h3,
+.gradient-bg h4,
+.gradient-bg h5,
+.gradient-bg h6 {
+  color: #ffffff;
+}
+
+.gradient-bg p,
+.gradient-bg span,
+.gradient-bg li,
+.gradient-bg label,
+.gradient-bg small,
+.gradient-bg strong {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.gradient-bg .text-muted {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.gradient-bg a {
+  color: #f8fafc;
+}
+
+.gradient-bg a:hover {
+  color: #ffffff;
+}
+
+.gradient-bg .btn {
+  background-color: #ffffff;
+  color: var(--primary-color);
+  border: none;
+}
+
+.gradient-bg .btn:hover {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: var(--primary-dark);
+}
+
+.gradient-bg .badge {
+  background-color: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
 }
 
 /* Modern Box Shadows */
