@@ -18,8 +18,53 @@ const ManageJobs = ({ user }) => {
     location: '',
     salary: '',
     type: 'full-time',
-    experienceLevel: 'entry'
+    experienceLevel: 'entry',
+    fieldOfWork: ''
   });
+
+  // Comprehensive list of work fields
+  const workFields = [
+    'Accounting & Finance',
+    'Administration & Office Support',
+    'Agriculture & Farming',
+    'Arts & Creative Design',
+    'Automotive & Mechanics',
+    'Banking & Financial Services',
+    'Building & Construction',
+    'Business Management',
+    'Call Centre & Customer Service',
+    'Carpentry & Woodwork',
+    'Cleaning & Janitorial Services',
+    'Community Services & Development',
+    'Consulting & Strategy',
+    'Education & Training',
+    'Electrical & Electronics',
+    'Engineering',
+    'Healthcare & Medical',
+    'Hospitality & Tourism',
+    'Human Resources',
+    'Information Technology',
+    'Insurance',
+    'Legal Services',
+    'Logistics & Supply Chain',
+    'Manufacturing & Production',
+    'Marketing & Communications',
+    'Mining & Resources',
+    'Nursing & Aged Care',
+    'Painting & Decorating',
+    'Plumbing & HVAC',
+    'Real Estate & Property',
+    'Retail & Sales',
+    'Science & Research',
+    'Security & Safety',
+    'Social Work & Counselling',
+    'Sport & Recreation',
+    'Telecommunications',
+    'Trades & Services',
+    'Transport & Delivery',
+    'Welding & Metal Work',
+    'Other'
+  ];
 
   useEffect(() => {
     fetchJobs();
@@ -87,7 +132,8 @@ const ManageJobs = ({ user }) => {
         location: '',
         salary: '',
         type: 'full-time',
-        experienceLevel: 'entry'
+        experienceLevel: 'entry',
+        fieldOfWork: ''
       });
       fetchJobs();
     } catch (error) {
@@ -105,7 +151,8 @@ const ManageJobs = ({ user }) => {
       location: job.location || '',
       salary: job.salary || '',
       type: job.type || 'full-time',
-      experienceLevel: job.experienceLevel || 'entry'
+      experienceLevel: job.experienceLevel || 'entry',
+      fieldOfWork: job.fieldOfWork || ''
     });
     setShowForm(true);
   };
@@ -132,7 +179,8 @@ const ManageJobs = ({ user }) => {
       location: '',
       salary: '',
       type: 'full-time',
-      experienceLevel: 'entry'
+      experienceLevel: 'entry',
+      fieldOfWork: ''
     });
   };
 
@@ -264,6 +312,28 @@ const ManageJobs = ({ user }) => {
                     <option value="senior">Senior Level</option>
                   </select>
                 </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="fieldOfWork" className="form-label form-label-required">
+                  Field of Work
+                </label>
+                <select
+                  id="fieldOfWork"
+                  name="fieldOfWork"
+                  className="form-select"
+                  value={formData.fieldOfWork}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select field of work...</option>
+                  {workFields.map(field => (
+                    <option key={field} value={field}>{field}</option>
+                  ))}
+                </select>
+                <small className="text-muted">
+                  Select the field that best describes this position. This helps match qualified candidates.
+                </small>
               </div>
 
               <div style={{ display: 'flex', gap: 'var(--spacing-md)', marginTop: 'var(--spacing-lg)' }}>

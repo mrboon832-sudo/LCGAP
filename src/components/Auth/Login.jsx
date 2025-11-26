@@ -7,6 +7,7 @@ import {
 import { auth } from '../../services/firebase';
 import { useNavigate, Link } from 'react-router-dom';
 import Footer from '../Layout/Footer';
+import featureFlags from '../../config/featureFlags';
 import '../../styles/base.css';
 import '../../styles/forms.css';
 import '../../styles/auth-background.css';
@@ -20,11 +21,11 @@ const Login = () => {
   const navigate = useNavigate();
 
   const backgroundImages = [
-    'https://thumbs.dreamstime.com/b/african-high-school-children-teacher-classroom-lesson-cape-town-south-africa-december-african-high-school-children-135349659.jpg',
-    'https://media.istockphoto.com/id/1440160796/photo/two-college-students-reading-a-textbook-during-computer-class.jpg?s=612x612&w=0&k=20&c=_gnYPqDC1Y4mJXRerGkXdpUh7UF2dtvmdXd00MT5CqM=',
-    'https://www.shutterstock.com/image-photo/young-graduates-standing-front-university-600nw-172074950.jpg',
-    'https://c8.alamy.com/comp/2BPG5T5/personnel-manager-and-young-job-applicant-shaking-hands-at-modern-company-office-2BPG5T5.jpg',
-    'https://i0.wp.com/technologysalon.org/wp-content/uploads/2018/06/south-africa-youth-employment.png?resize=600%2C380'
+    'https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=1200',
+    'https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1200',
+    'https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=1200',
+    'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=1200',
+    'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=1200'
   ];
 
   // Clear any previous errors when component mounts
@@ -46,6 +47,17 @@ const Login = () => {
       
       console.log('✅ Login successful!');
       console.log('Email verified:', userCredential.user.emailVerified);
+      
+      // Check email verification (unless bypassed)
+      if (!featureFlags.bypassEmailVerification && !userCredential.user.emailVerified) {
+        console.log('⚠️ Email not verified, redirecting to verification page');
+        setError('Please verify your email address before logging in. Check your inbox for the verification link.');
+        setLoading(false);
+        // Optionally redirect to verification page
+        navigate('/verify-email');
+        return;
+      }
+      
       console.log('✅ Navigating to dashboard');
       navigate('/dashboard');
     } catch (err) {

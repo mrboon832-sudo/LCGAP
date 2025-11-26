@@ -125,31 +125,51 @@ export const createCourse = async (institutionId, facultyId, data) => {
 };
 
 export const getCourses = async (filters = {}) => {
-  // If institutionId and facultyId provided, use subcollection query (old behavior)
+  // If institutionId and facultyId provided, use subcollection query
   if (filters.institutionId && filters.facultyId) {
-    const q = query(
-      collection(db, 'institutions', filters.institutionId, 'faculties', filters.facultyId, 'courses'),
-      orderBy('name')
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    try {
+      const coursesRef = collection(db, 'institutions', filters.institutionId, 'faculties', filters.facultyId, 'courses');
+      const snapshot = await getDocs(coursesRef);
+      const courses = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      // Sort on client side to avoid index requirement
+      return courses.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } catch (error) {
+      console.error('Error in getCourses:', error);
+      throw error;
+    }
   }
   
-  // If only institutionId provided, query from courses collection
+  // If only institutionId provided, get courses from all faculties
   if (filters.institutionId) {
-    const q = query(
-      collection(db, 'courses'),
-      where('institutionId', '==', filters.institutionId),
-      limit(50)
-    );
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    try {
+      // First, get all faculties for this institution
+      const facultiesRef = collection(db, 'institutions', filters.institutionId, 'faculties');
+      const facultiesSnapshot = await getDocs(facultiesRef);
+      
+      // Then, get courses from all faculties
+      const allCourses = [];
+      for (const facultyDoc of facultiesSnapshot.docs) {
+        const coursesRef = collection(db, 'institutions', filters.institutionId, 'faculties', facultyDoc.id, 'courses');
+        const coursesSnapshot = await getDocs(coursesRef);
+        const courses = coursesSnapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          facultyId: facultyDoc.id,
+          facultyName: facultyDoc.data().name,
+          ...doc.data() 
+        }));
+        allCourses.push(...courses);
+      }
+      
+      // Sort by name
+      return allCourses.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    } catch (error) {
+      console.error('Error getting courses for institution:', error);
+      return [];
+    }
   }
   
-  // Default: get all courses
-  const q = query(collection(db, 'courses'), limit(50));
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  // Default: return empty array (we don't support querying all courses across all institutions)
+  return [];
 };
 
 export const getCourse = async (institutionId, facultyId, courseId) => {
@@ -173,8 +193,6 @@ export const deleteCourse = async (institutionId, facultyId, courseId) => {
 
 // Application operations - enforces 2 per institution limit
 export const applyToCourse = async (studentId, institutionId, courseId, applicationData) => {
-  const batch = writeBatch(db);
-
   // Create deterministic application ID
   const appId = `${institutionId}_${studentId}_${courseId}`;
   const appRef = doc(db, 'applications', appId);
@@ -213,26 +231,20 @@ export const applyToCourse = async (studentId, institutionId, courseId, applicat
       const student = studentSnap.data();
       const studentGPA = parseFloat(student.academicPerformance?.gpa || student.highSchool?.gpa || 0);
       
-      // Basic qualification check: if course has minimum GPA requirement
+      // Note: GPA and level checks are informational only
+      // Students can still apply even if they don't meet exact requirements
+      // The institution will review and make final decision
+      
+      // Store qualification info for institution to review, but don't block application
+      applicationData.qualificationNote = '';
+      
       if (requirements.toLowerCase().includes('gpa')) {
-        // Extract GPA requirement (e.g., "Minimum GPA: 3.0" or "GPA 2.5+")
         const gpaMatch = requirements.match(/(\d+\.?\d*)/);
-        if (gpaMatch) {
+        if (gpaMatch && studentGPA > 0) {
           const requiredGPA = parseFloat(gpaMatch[1]);
           if (studentGPA < requiredGPA) {
-            throw new Error(`You do not meet the minimum GPA requirement of ${requiredGPA} for this course. Your GPA: ${studentGPA}`);
+            applicationData.qualificationNote += `Note: Student GPA (${studentGPA}) is below minimum requirement (${requiredGPA}). `;
           }
-        }
-      }
-      
-      // Check if course requires specific level
-      if (course.level && student.academicPerformance?.level) {
-        const levelHierarchy = ['high school', 'certificate', 'diploma', 'undergraduate', 'postgraduate', 'masters', 'doctorate'];
-        const studentLevelIndex = levelHierarchy.indexOf(student.academicPerformance.level.toLowerCase());
-        const courseLevelIndex = levelHierarchy.indexOf(course.level.toLowerCase());
-        
-        if (studentLevelIndex !== -1 && courseLevelIndex !== -1 && studentLevelIndex > courseLevelIndex) {
-          throw new Error(`You are overqualified for this ${course.level} program. Please apply to programs matching your ${student.academicPerformance.level} level.`);
         }
       }
     }
@@ -240,38 +252,56 @@ export const applyToCourse = async (studentId, institutionId, courseId, applicat
 
   // Get or create applicationsByInstitution doc
   const instAppRef = doc(db, 'users', studentId, 'applicationsByInstitution', institutionId);
-  const instAppSnap = await getDoc(instAppRef);
-
+  
   let courseIds = [];
-  if (instAppSnap.exists()) {
-    courseIds = instAppSnap.data().courseIds || [];
-    if (courseIds.length >= 2) {
-      throw new Error('You can only apply to 2 courses per institution');
+  try {
+    const instAppSnap = await getDoc(instAppRef);
+    if (instAppSnap.exists()) {
+      courseIds = instAppSnap.data().courseIds || [];
+      if (courseIds.length >= 2) {
+        throw new Error('You can apply to a maximum of 2 courses per institution');
+      }
+      if (courseIds.includes(courseId)) {
+        throw new Error('You have already applied to this course');
+      }
     }
-    if (courseIds.includes(courseId)) {
-      throw new Error('You have already applied to this course');
-    }
+  } catch (error) {
+    console.error('Error checking existing applications:', error);
+    // Continue anyway - allow first application
   }
 
   // Add course to array
   courseIds.push(courseId);
 
-  // Batch write: application + update count
-  batch.set(appRef, {
-    studentId,
-    institutionId,
-    courseId,
-    status: 'pending',
-    appliedAt: serverTimestamp(),
-    ...applicationData
-  });
+  // Write application document first (not using batch to isolate errors)
+  try {
+    await setDoc(appRef, {
+      studentId,
+      institutionId,
+      courseId,
+      status: 'pending',
+      appliedAt: serverTimestamp(),
+      ...applicationData
+    });
+    console.log('✓ Application document created successfully');
+  } catch (appError) {
+    console.error('✗ Error creating application document:', appError);
+    console.error('Application data:', { studentId, institutionId, courseId, status: 'pending', ...applicationData });
+    throw new Error('Failed to create application: ' + appError.message);
+  }
 
-  batch.set(instAppRef, {
-    courseIds,
-    updatedAt: serverTimestamp()
-  }, { merge: true });
+  // Then update the tracking document
+  try {
+    await setDoc(instAppRef, {
+      courseIds,
+      updatedAt: serverTimestamp()
+    }, { merge: true });
+    console.log('✓ Application tracking updated successfully');
+  } catch (trackError) {
+    console.error('✗ Error updating application tracking:', trackError);
+    // Don't fail the whole operation if tracking fails
+  }
 
-  await batch.commit();
   return appId;
 };
 

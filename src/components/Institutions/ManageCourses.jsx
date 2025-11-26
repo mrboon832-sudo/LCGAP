@@ -49,10 +49,16 @@ const ManageCourses = ({ user, institutionId }) => {
 
   const fetchCourses = async () => {
     try {
-      const data = await getCourses(institutionId, selectedFaculty);
+      console.log('Fetching courses for:', { institutionId, facultyId: selectedFaculty });
+      const data = await getCourses({ 
+        institutionId, 
+        facultyId: selectedFaculty 
+      });
+      console.log('Courses fetched:', data);
       setCourses(data);
     } catch (error) {
       console.error('Error fetching courses:', error);
+      console.error('Error details:', error.message);
     }
   };
 

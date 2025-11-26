@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { Link } from 'react-router-dom';
 import Footer from '../Layout/Footer';
@@ -95,39 +95,69 @@ const ApplicantsPage = ({ user }) => {
     let score = 0;
     let maxScore = 100;
     
-    // Academic Performance (40 points)
-    if (student.academicPerformance) {
-      const gpa = parseFloat(student.academicPerformance.gpa || student.academicPerformance.grade || 0);
-      if (gpa >= 3.5) score += 40;
-      else if (gpa >= 3.0) score += 30;
-      else if (gpa >= 2.5) score += 20;
-      else score += 10;
-    }
-    
-    // Work Experience (30 points)
-    const experience = student.workExperience || [];
-    if (experience.length >= 3) score += 30;
-    else if (experience.length === 2) score += 20;
-    else if (experience.length === 1) score += 10;
-    
-    // Relevance to Job (30 points)
-    // Check if student's field matches job requirements
-    const studentField = (student.field || student.major || '').toLowerCase();
-    const jobRequirements = (job.requirements || '').toLowerCase();
+    // Field of Work Match (35 points) - Most important for job matching
+    const applicationField = (application.fieldOfWork || '').toLowerCase();
+    const studentFields = (application.fieldsOfWork || student.fieldsOfWork || []).map(f => f.toLowerCase());
     const jobTitle = (job.title || '').toLowerCase();
+    const jobRequirements = (job.requirements || '').toLowerCase();
+    const jobDescription = (job.description || '').toLowerCase();
     
-    if (jobRequirements.includes(studentField) || jobTitle.includes(studentField)) {
-      score += 30;
-    } else if (studentField) {
-      score += 15; // Partial credit for having a field
+    // Exact match with application field
+    if (applicationField) {
+      if (jobTitle.includes(applicationField) || 
+          jobRequirements.includes(applicationField) || 
+          jobDescription.includes(applicationField)) {
+        score += 35; // Perfect match
+      } else if (studentFields.some(field => 
+          jobTitle.includes(field) || 
+          jobRequirements.includes(field) || 
+          jobDescription.includes(field))) {
+        score += 25; // Profile fields match
+      } else {
+        score += 10; // Field specified but no match
+      }
+    } else if (studentFields.length > 0) {
+      // Check if any student field matches
+      if (studentFields.some(field => 
+          jobTitle.includes(field) || 
+          jobRequirements.includes(field) || 
+          jobDescription.includes(field))) {
+        score += 25;
+      } else {
+        score += 5; // Has fields but no match
+      }
     }
+    
+    // Academic Performance (30 points)
+    const gpa = parseFloat(
+      student.highSchool?.gpa || 
+      student.academicPerformance?.gpa || 
+      student.academicPerformance?.grade || 
+      0
+    );
+    if (gpa >= 3.5 || gpa >= 80) score += 30; // 3.5/4.0 or 80%+
+    else if (gpa >= 3.0 || gpa >= 70) score += 22;
+    else if (gpa >= 2.5 || gpa >= 60) score += 15;
+    else if (gpa > 0) score += 8;
+    
+    // Work Experience (20 points)
+    const experience = student.workExperience || application.workExperience || [];
+    if (experience.length >= 3) score += 20;
+    else if (experience.length === 2) score += 14;
+    else if (experience.length === 1) score += 8;
+    
+    // Certificates (15 points)
+    const certificates = student.certificates || application.certificates || [];
+    if (certificates.length >= 3) score += 15;
+    else if (certificates.length === 2) score += 10;
+    else if (certificates.length === 1) score += 5;
     
     return Math.min(score, maxScore);
   };
 
   const getQualificationBadge = (score) => {
-    if (score >= 70) return { class: 'badge-success', text: 'Qualified for Interview' };
-    if (score >= 50) return { class: 'badge-warning', text: 'Under Review' };
+    if (score >= 65) return { class: 'badge-success', text: 'Qualified for Interview' };
+    if (score >= 45) return { class: 'badge-warning', text: 'Under Review' };
     return { class: 'badge-danger', text: 'Not Qualified' };
   };
 
@@ -136,7 +166,7 @@ const ApplicantsPage = ({ user }) => {
       const appRef = doc(db, 'jobApplications', applicantId);
       await updateDoc(appRef, {
         status: newStatus,
-        updatedAt: new Date()
+        updatedAt: serverTimestamp()
       });
       
       // Refresh data

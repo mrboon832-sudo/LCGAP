@@ -75,7 +75,7 @@ const InstitutionList = () => {
           />
         </div>
         {searchTerm && (
-          <p className="text-muted" style={{ marginTop: 'var(--spacing-sm)', fontSize: '0.875rem' }}>
+          <p style={{ marginTop: 'var(--spacing-sm)', fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
             Found {filteredInstitutions.length} result{filteredInstitutions.length !== 1 ? 's' : ''}
           </p>
         )}
@@ -90,8 +90,8 @@ const InstitutionList = () => {
             borderRadius: '12px'
           }}>
             <div style={{ fontSize: '3rem', marginBottom: 'var(--spacing-md)' }}>🔍</div>
-            <h3 style={{ marginBottom: 'var(--spacing-sm)' }}>No Institutions Found</h3>
-            <p className="text-muted">Try adjusting your search criteria</p>
+            <h3 style={{ marginBottom: 'var(--spacing-sm)', color: 'var(--text-color)' }}>No Institutions Found</h3>
+            <p style={{ color: 'var(--text-secondary)' }}>Try adjusting your search criteria</p>
           </div>
         </div>
       ) : (
@@ -111,7 +111,7 @@ const InstitutionList = () => {
                 padding: 'var(--spacing-lg)',
                 color: 'white'
               }}>
-                <h3 style={{ margin: 0, fontSize: '1.3rem' }}>{institution.name}</h3>
+                <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'white' }}>{institution.name}</h3>
               </div>
               <div style={{ padding: 'var(--spacing-lg)' }}>
                 <div style={{ 
@@ -119,18 +119,20 @@ const InstitutionList = () => {
                   alignItems: 'center', 
                   gap: 'var(--spacing-sm)',
                   marginBottom: 'var(--spacing-md)',
-                  color: '#64748b'
+                  color: 'var(--text-color)',
+                  fontSize: '0.95rem'
                 }}>
                   <span>📍</span>
                   <span>{institution.location || 'Location not specified'}</span>
                 </div>
                 <p style={{ 
-                  color: '#475569',
+                  color: 'var(--text-color)',
                   lineHeight: 1.6,
-                  marginBottom: 'var(--spacing-lg)'
+                  marginBottom: 'var(--spacing-lg)',
+                  fontSize: '0.95rem'
                 }}>
-                  {institution.profile?.substring(0, 150) || 'No description available'}
-                  {institution.profile?.length > 150 ? '...' : ''}
+                  {institution.description?.substring(0, 150) || 'No description available'}
+                  {institution.description?.length > 150 ? '...' : ''}
                 </p>
                 <div className="flex gap-md" style={{ marginTop: 'var(--spacing-lg)' }}>
                   <Link

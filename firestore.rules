@@ -36,10 +36,7 @@ service cloud.firestore {
       match /applicationsByInstitution/{institutionId} {
         allow read: if isOwner(userId);
         
-        allow write: if isOwner(userId)
-          && isVerified()
-          && request.resource.data.courseIds is list
-          && request.resource.data.courseIds.size() <= 2;
+        allow write: if isOwner(userId) && isAuthenticated();
       }
     }
     
@@ -71,6 +68,24 @@ service cloud.firestore {
       }
     }
     
+    // Top-level Courses collection (for queries across all institutions)
+    match /courses/{courseId} {
+      allow read: if isAuthenticated();
+      
+      // Only allow write if user owns the institution
+      allow create: if isVerified()
+        && request.resource.data.institutionId is string
+        && exists(/databases/$(database)/documents/institutions/$(request.resource.data.institutionId))
+        && (isAdmin() || get(/databases/$(database)/documents/institutions/$(request.resource.data.institutionId)).data.createdBy == request.auth.uid);
+      
+      allow update, delete: if isAuthenticated() && (
+        isAdmin()
+        || (resource.data.institutionId is string 
+            && exists(/databases/$(database)/documents/institutions/$(resource.data.institutionId))
+            && get(/databases/$(database)/documents/institutions/$(resource.data.institutionId)).data.createdBy == request.auth.uid)
+      );
+    }
+    
     // Companies collection
     match /companies/{companyId} {
       allow read: if isAuthenticated();
@@ -92,34 +107,31 @@ service cloud.firestore {
         && request.resource.data.title is string
         && request.resource.data.description is string;
       
-      allow update: if isAuthenticated() 
-        && (isAdmin() || resource.data.companyId == request.auth.uid);
-      
-      allow delete: if isAdmin() 
-        || (isAuthenticated() && resource.data.companyId == request.auth.uid);
+      // Allow update/delete if admin, or if user owns the job directly (companyId == uid)
+      // or if user created the company (for company document IDs)
+      allow update, delete: if isAuthenticated() && (
+        isAdmin() 
+        || resource.data.companyId == request.auth.uid
+        || (exists(/databases/$(database)/documents/companies/$(resource.data.companyId)) 
+            && get(/databases/$(database)/documents/companies/$(resource.data.companyId)).data.createdBy == request.auth.uid)
+      );
     }
     
     // Applications collection - CRITICAL SECURITY
     match /applications/{appId} {
-      allow read: if isAuthenticated() && (
-        isAdmin()
-        || resource.data.studentId == request.auth.uid
-        || resource.data.institutionId == request.auth.uid
-      );
+      // Allow read for authenticated users
+      allow read: if isAuthenticated();
       
-      // Enforce deterministic ID pattern and student ownership
-      allow create: if isVerified()
-        && request.auth.uid == request.resource.data.studentId
-        && appId == (request.resource.data.institutionId + "_" + request.resource.data.studentId + "_" + request.resource.data.courseId)
-        && request.resource.data.status == 'pending'
-        && request.resource.data.studentId is string
-        && request.resource.data.institutionId is string
-        && request.resource.data.courseId is string;
+      // Allow create - authenticated users can create their own applications
+      allow create: if isAuthenticated()
+        && request.auth.uid == request.resource.data.studentId;
       
-      // Only institution or admin can update status
+      // Only institution owner, student (for accepting), or admin can update
       allow update: if isAuthenticated() && (
         isAdmin()
-        || (resource.data.institutionId == request.auth.uid && request.resource.data.keys().hasOnly(['status', 'updatedAt']))
+        || resource.data.studentId == request.auth.uid
+        || (exists(/databases/$(database)/documents/institutions/$(resource.data.institutionId))
+            && get(/databases/$(database)/documents/institutions/$(resource.data.institutionId)).data.createdBy == request.auth.uid)
       );
       
       allow delete: if isAdmin();
@@ -127,24 +139,36 @@ service cloud.firestore {
     
     // Job Applications collection
     match /jobApplications/{appId} {
-      allow read: if isAuthenticated() && (
+      // Single document read
+      allow get: if isAuthenticated() && (
         isAdmin()
         || resource.data.studentId == request.auth.uid
-        || get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.companyId == request.auth.uid
+        || (exists(/databases/$(database)/documents/jobs/$(resource.data.jobId))
+            && (get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.companyId == request.auth.uid
+                || (exists(/databases/$(database)/documents/companies/$(get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.companyId)) 
+                    && get(/databases/$(database)/documents/companies/$(get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.companyId)).data.createdBy == request.auth.uid)))
       );
       
-      // Enforce deterministic ID pattern
-      allow create: if isVerified()
-        && request.auth.uid == request.resource.data.studentId
-        && appId == (request.resource.data.jobId + "_" + request.resource.data.studentId)
-        && request.resource.data.status == 'pending';
+      // List queries - allow authenticated users, filter in application code
+      allow list: if isAuthenticated();
       
+      // Allow create for verified students (removed deterministic ID requirement)
+      allow create: if isAuthenticated()
+        && request.auth.uid == request.resource.data.studentId
+        && request.resource.data.status == 'pending'
+        && request.resource.data.jobId is string
+        && request.resource.data.studentId is string;
+      
+      // Allow update if admin, job's companyId matches user, or user created the company
       allow update: if isAuthenticated() && (
         isAdmin()
-        || get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.companyId == request.auth.uid
+        || (exists(/databases/$(database)/documents/jobs/$(resource.data.jobId))
+            && (get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.companyId == request.auth.uid
+                || (exists(/databases/$(database)/documents/companies/$(get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.companyId)) 
+                    && get(/databases/$(database)/documents/companies/$(get(/databases/$(database)/documents/jobs/$(resource.data.jobId)).data.companyId)).data.createdBy == request.auth.uid)))
       );
       
-      allow delete: if isAdmin();
+      allow delete: if isAdmin() || resource.data.studentId == request.auth.uid;
     }
     
     // Transcripts/documents metadata

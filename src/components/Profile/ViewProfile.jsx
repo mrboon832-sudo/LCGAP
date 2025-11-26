@@ -6,7 +6,7 @@ import Footer from '../Layout/Footer';
 import '../../styles/base.css';
 import '../../styles/forms.css';
 
-const ViewProfile = () => {
+const ViewProfile = ({ user }) => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
@@ -15,19 +15,23 @@ const ViewProfile = () => {
   useEffect(() => {
     loadProfile();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   const loadProfile = async () => {
     try {
-      const user = auth.currentUser;
       if (!user) {
-        navigate('/login');
-        return;
-      }
-
-      const profileData = await getUserProfile(user.uid);
-      if (profileData) {
-        setProfile(profileData);
+        // Try to get from auth as fallback
+        const authUser = auth.currentUser;
+        if (!authUser) {
+          navigate('/login');
+          return;
+        }
+        const profileData = await getUserProfile(authUser.uid);
+        if (profileData) {
+          setProfile(profileData);
+        }
+      } else {
+        setProfile(user);
       }
       setLoading(false);
     } catch (err) {

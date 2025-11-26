@@ -25,6 +25,12 @@ const ApplicationsPage = ({ user }) => {
         return;
       }
 
+      if (!user || !user.role) {
+        setError('User profile not loaded');
+        setLoading(false);
+        return;
+      }
+
       // Fetch course applications
       const appsRef = collection(db, 'applications');
       let courseQuery;
@@ -34,18 +40,31 @@ const ApplicationsPage = ({ user }) => {
         courseQuery = query(appsRef, where('studentId', '==', currentUser.uid));
       } else if (user.role === 'institute') {
         // Institutions see applications to their courses
+        if (!user.institutionId) {
+          setError('Institution ID not found');
+          setLoading(false);
+          return;
+        }
         courseQuery = query(appsRef, where('institutionId', '==', user.institutionId));
       } else if (user.role === 'admin') {
         // Admins see all applications
         courseQuery = query(appsRef);
       }
 
-      // Fetch job applications for students
+      // Fetch job applications
       const jobAppsRef = collection(db, 'jobApplications');
       let jobQuery;
       
       if (user.role === 'student') {
         jobQuery = query(jobAppsRef, where('studentId', '==', currentUser.uid));
+      } else if (user.role === 'company') {
+        // Companies see applications to their jobs
+        if (!user.companyId) {
+          setError('Company ID not found');
+          setLoading(false);
+          return;
+        }
+        jobQuery = query(jobAppsRef, where('companyId', '==', user.companyId));
       }
 
       // Execute queries
@@ -217,7 +236,8 @@ const ApplicationsPage = ({ user }) => {
   }
 
   const totalApplications = applications.length + jobApplications.length;
-  const acceptedCount = applications.filter(app => app.status === 'accepted').length;
+  const acceptedCount = applications.filter(app => app.status === 'accepted').length + 
+                        jobApplications.filter(app => app.status === 'accepted').length;
 
   return (
     <div className={getThemeClass()}>
@@ -388,25 +408,41 @@ const ApplicationsPage = ({ user }) => {
           className={`btn ${filter === 'all' ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setFilter('all')}
         >
-          All ({applications.length})
+          All ({allApplications.filter(app => {
+            if (viewType === 'courses') return app.type === 'course';
+            if (viewType === 'jobs') return app.type === 'job';
+            return true;
+          }).length})
         </button>
         <button 
           className={`btn ${filter === 'pending' ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setFilter('pending')}
         >
-          Pending ({applications.filter(a => a.status === 'pending').length})
+          Pending ({allApplications.filter(app => {
+            if (viewType === 'courses' && app.type !== 'course') return false;
+            if (viewType === 'jobs' && app.type !== 'job') return false;
+            return app.status === 'pending';
+          }).length})
         </button>
         <button 
           className={`btn ${filter === 'accepted' ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setFilter('accepted')}
         >
-          Accepted ({applications.filter(a => a.status === 'accepted').length})
+          Accepted ({allApplications.filter(app => {
+            if (viewType === 'courses' && app.type !== 'course') return false;
+            if (viewType === 'jobs' && app.type !== 'job') return false;
+            return app.status === 'accepted';
+          }).length})
         </button>
         <button 
           className={`btn ${filter === 'rejected' ? 'btn-primary' : 'btn-outline'}`}
           onClick={() => setFilter('rejected')}
         >
-          Rejected ({applications.filter(a => a.status === 'rejected').length})
+          Rejected ({allApplications.filter(app => {
+            if (viewType === 'courses' && app.type !== 'course') return false;
+            if (viewType === 'jobs' && app.type !== 'job') return false;
+            return app.status === 'rejected';
+          }).length})
         </button>
       </div>
 
@@ -481,9 +517,6 @@ const ApplicationsPage = ({ user }) => {
               )}
 
               <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
-                <Link to={`/applications/${app.id}`} className="btn btn-primary">
-                  View Details
-                </Link>
                 {user.role === 'institute' && app.status === 'pending' && (
                   <>
                     <button className="btn btn-success">Accept</button>

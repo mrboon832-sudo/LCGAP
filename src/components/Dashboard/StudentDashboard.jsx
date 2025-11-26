@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { getStudentApplications, getStudentJobApplications } from '../../services/api';
+import { getStudentApplications, getStudentJobApplications, getInstitution } from '../../services/api';
 import Footer from '../Layout/Footer';
 import '../../styles/base.css';
 
@@ -20,7 +20,32 @@ const StudentDashboard = ({ user }) => {
         getStudentApplications(user.uid),
         getStudentJobApplications(user.uid)
       ]);
-      setApplications(courseApps);
+      
+      // Enrich applications with institution names
+      const enrichedApps = await Promise.all(
+        courseApps.map(async (app) => {
+          let institutionName = app.institutionName || '';
+          
+          // Fetch institution name if not in app data
+          if (!institutionName && app.institutionId) {
+            try {
+              const institution = await getInstitution(app.institutionId);
+              institutionName = institution?.name || app.institutionId;
+            } catch (err) {
+              console.error('Error fetching institution:', err);
+              institutionName = app.institutionId;
+            }
+          }
+          
+          return {
+            ...app,
+            institutionName,
+            courseName: app.courseName || app.courseId
+          };
+        })
+      );
+      
+      setApplications(enrichedApps);
       setJobApplications(jobApps);
       setLoading(false);
     } catch (error) {
@@ -239,10 +264,10 @@ const StudentDashboard = ({ user }) => {
                   </div>
                   <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 'var(--spacing-sm)' }}>
                     <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                      <strong>Institution:</strong> {app.institutionId}
+                      <strong>Institution:</strong> {app.institutionName || app.institutionId}
                     </p>
                     <p className="text-muted" style={{ fontSize: '0.875rem', marginBottom: '0.5rem' }}>
-                      <strong>Course:</strong> {app.courseId}
+                      <strong>Course:</strong> {app.courseName || app.courseId}
                     </p>
                     <p className="text-muted" style={{ fontSize: '0.875rem', margin: 0 }}>
                       <strong>Applied:</strong> {app.appliedAt?.toDate?.().toLocaleDateString() || 'N/A'}

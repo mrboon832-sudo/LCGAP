@@ -24,6 +24,7 @@ const InstituteDashboard = lazy(() => import('./components/Dashboard/InstituteDa
 const CompanyDashboard = lazy(() => import('./components/Dashboard/CompanyDashboard'));
 const InstitutionList = lazy(() => import('./components/Institutions/InstitutionList'));
 const InstitutionProfile = lazy(() => import('./components/Institutions/InstitutionProfile'));
+const FacultyCourses = lazy(() => import('./components/Institutions/FacultyCourses'));
 const ManageFaculties = lazy(() => import('./components/Institutions/ManageFaculties'));
 const ManageCourses = lazy(() => import('./components/Institutions/ManageCourses'));
 const ManageInstitution = lazy(() => import('./components/Institutions/ManageInstitution'));
@@ -196,6 +197,19 @@ function App() {
               <>
                 <Header user={userProfile} onLogout={handleLogout} />
                 <InstitutionProfile />
+              </>
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Faculty Courses */}
+        <Route
+          path="/institutions/:institutionId/faculties/:facultyId"
+          element={
+            <ProtectedRoute user={user}>
+              <>
+                <Header user={userProfile} onLogout={handleLogout} />
+                <FacultyCourses />
               </>
             </ProtectedRoute>
           }
@@ -379,14 +393,14 @@ function App() {
           }
         />
 
-        {/* Student Profile Pages */}
+        {/* Profile Pages - Available for all authenticated users */}
         <Route
           path="/profile"
           element={
             <ProtectedRoute user={user}>
               <>
                 <Header user={userProfile} onLogout={handleLogout} />
-                <ViewProfile />
+                <ViewProfile user={userProfile} />
               </>
             </ProtectedRoute>
           }
@@ -397,7 +411,7 @@ function App() {
             <ProtectedRoute user={user}>
               <>
                 <Header user={userProfile} onLogout={handleLogout} />
-                <StudentProfile />
+                <StudentProfile user={userProfile} />
               </>
             </ProtectedRoute>
           }

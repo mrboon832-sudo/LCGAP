@@ -17,8 +17,13 @@ const StudentProfile = () => {
     // Basic Info
     displayName: '',
     email: '',
-    phone: '',
+    phoneNumber: '',
+    dateOfBirth: '',
+    gender: '',
+    address: '',
     bio: '',
+    isForeign: false,
+    fieldsOfWork: [], // Multiple fields for better matching
     
     // High School Info
     highSchool: {
@@ -35,6 +40,50 @@ const StudentProfile = () => {
     // Work Experience
     workExperience: []
   });
+
+  // Comprehensive list of work fields
+  const workFields = [
+    'Accounting & Finance',
+    'Administration & Office Support',
+    'Agriculture & Farming',
+    'Arts & Creative Design',
+    'Automotive & Mechanics',
+    'Banking & Financial Services',
+    'Building & Construction',
+    'Business Management',
+    'Call Centre & Customer Service',
+    'Carpentry & Woodwork',
+    'Cleaning & Janitorial Services',
+    'Community Services & Development',
+    'Consulting & Strategy',
+    'Education & Training',
+    'Electrical & Electronics',
+    'Engineering',
+    'Healthcare & Medical',
+    'Hospitality & Tourism',
+    'Human Resources',
+    'Information Technology',
+    'Insurance',
+    'Legal Services',
+    'Logistics & Supply Chain',
+    'Manufacturing & Production',
+    'Marketing & Communications',
+    'Mining & Resources',
+    'Nursing & Aged Care',
+    'Painting & Decorating',
+    'Plumbing & HVAC',
+    'Real Estate & Property',
+    'Retail & Sales',
+    'Science & Research',
+    'Security & Safety',
+    'Social Work & Counselling',
+    'Sport & Recreation',
+    'Telecommunications',
+    'Trades & Services',
+    'Transport & Delivery',
+    'Welding & Metal Work',
+    'Other'
+  ];
 
   // Temporary state for adding new items
   const [newCertificate, setNewCertificate] = useState({
@@ -74,8 +123,13 @@ const StudentProfile = () => {
         setFormData({
           displayName: profile.displayName || '',
           email: profile.email || '',
-          phone: profile.profile?.phone || '',
-          bio: profile.profile?.bio || '',
+          phoneNumber: profile.phoneNumber || '',
+          dateOfBirth: profile.dateOfBirth || '',
+          gender: profile.gender || '',
+          address: profile.address || '',
+          bio: profile.bio || '',
+          isForeign: profile.isForeign || false,
+          fieldsOfWork: profile.fieldsOfWork || [],
           highSchool: profile.highSchool || {
             name: '',
             location: '',
@@ -154,6 +208,45 @@ const StudentProfile = () => {
     }));
   };
 
+  // Validation for subjects
+  const getMandatorySubjects = () => {
+    const mandatory = ['English', 'Biology', 'Chemistry', 'Physics'];
+    if (!formData.isForeign) {
+      mandatory.push('Sesotho');
+    }
+    return mandatory;
+  };
+
+  const getMissingMandatorySubjects = () => {
+    const mandatorySubjects = getMandatorySubjects();
+    const currentSubjects = formData.highSchool.subjects.map(s => 
+      s.name.toLowerCase().trim()
+    );
+    
+    return mandatorySubjects.filter(required => 
+      !currentSubjects.some(current => 
+        current.includes(required.toLowerCase())
+      )
+    );
+  };
+
+  const validateSubjects = () => {
+    const subjects = formData.highSchool.subjects;
+    
+    // Check minimum count
+    if (subjects.length < 7) {
+      return `You need at least 7 subjects. Currently have ${subjects.length}.`;
+    }
+    
+    // Check mandatory subjects
+    const missing = getMissingMandatorySubjects();
+    if (missing.length > 0) {
+      return `Missing mandatory subjects: ${missing.join(', ')}`;
+    }
+    
+    return null;
+  };
+
   const addCertificate = () => {
     if (newCertificate.name.trim() && newCertificate.issuer.trim()) {
       setFormData(prev => ({
@@ -214,12 +307,32 @@ const StudentProfile = () => {
         return;
       }
 
+      // Validate subjects before saving
+      const subjectValidationError = validateSubjects();
+      if (subjectValidationError) {
+        setError(subjectValidationError);
+        setSaving(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
+      // Validate fields of work
+      if (formData.fieldsOfWork.length === 0) {
+        setError('Please select at least one field of work to help match you with relevant jobs.');
+        setSaving(false);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      }
+
       await updateUserProfile(user.uid, {
         displayName: formData.displayName,
-        profile: {
-          phone: formData.phone,
-          bio: formData.bio
-        },
+        phoneNumber: formData.phoneNumber,
+        dateOfBirth: formData.dateOfBirth,
+        gender: formData.gender,
+        address: formData.address,
+        bio: formData.bio,
+        isForeign: formData.isForeign,
+        fieldsOfWork: formData.fieldsOfWork,
         highSchool: formData.highSchool,
         certificates: formData.certificates,
         workExperience: formData.workExperience
@@ -250,11 +363,15 @@ const StudentProfile = () => {
 
   const cgpa = calculateCGPA();
   const profileCompletion = ((
-    (formData.displayName ? 20 : 0) +
-    (formData.phone ? 10 : 0) +
-    (formData.bio ? 15 : 0) +
-    (formData.highSchool.name ? 15 : 0) +
-    (formData.highSchool.subjects.length > 0 ? 20 : 0) +
+    (formData.displayName ? 10 : 0) +
+    (formData.phoneNumber ? 8 : 0) +
+    (formData.dateOfBirth ? 7 : 0) +
+    (formData.gender ? 5 : 0) +
+    (formData.address ? 5 : 0) +
+    (formData.bio ? 10 : 0) +
+    (formData.fieldsOfWork && formData.fieldsOfWork.length > 0 ? 10 : 0) +
+    (formData.highSchool.name ? 10 : 0) +
+    (formData.highSchool.subjects.length >= 7 ? 15 : formData.highSchool.subjects.length > 0 ? 8 : 0) +
     (formData.certificates.length > 0 ? 10 : 0) +
     (formData.workExperience.length > 0 ? 10 : 0)
   ));
@@ -427,19 +544,89 @@ const StudentProfile = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="phone" className="form-label">
+                  <label htmlFor="phoneNumber" className="form-label form-label-required">
                     Phone Number
                   </label>
                   <input
                     type="tel"
-                    id="phone"
-                    name="phone"
+                    id="phoneNumber"
+                    name="phoneNumber"
                     className="form-input"
-                    value={formData.phone}
+                    value={formData.phoneNumber}
                     onChange={handleBasicChange}
                     placeholder="+266 XXXX XXXX"
+                    required
                   />
                 </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="dateOfBirth" className="form-label form-label-required">
+                    Date of Birth
+                  </label>
+                  <input
+                    type="date"
+                    id="dateOfBirth"
+                    name="dateOfBirth"
+                    className="form-input"
+                    value={formData.dateOfBirth}
+                    onChange={handleBasicChange}
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="gender" className="form-label form-label-required">
+                    Gender
+                  </label>
+                  <select
+                    id="gender"
+                    name="gender"
+                    className="form-input"
+                    value={formData.gender}
+                    onChange={handleBasicChange}
+                    required
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                    <option value="Prefer not to say">Prefer not to say</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-group">
+                <label htmlFor="address" className="form-label form-label-required">
+                  Address
+                </label>
+                <textarea
+                  id="address"
+                  name="address"
+                  className="form-textarea"
+                  value={formData.address}
+                  onChange={handleBasicChange}
+                  placeholder="Enter your full address..."
+                  rows="2"
+                  required
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)' }}>
+                  <input
+                    type="checkbox"
+                    name="isForeign"
+                    checked={formData.isForeign}
+                    onChange={(e) => setFormData(prev => ({ ...prev, isForeign: e.target.checked }))}
+                    style={{ width: 'auto', cursor: 'pointer' }}
+                  />
+                  I am a foreign/international student
+                </label>
+                <small className="text-muted" style={{ display: 'block', marginTop: 'var(--spacing-xs)' }}>
+                  Check this if you are not from Lesotho (exempts you from Sesotho subject requirement)
+                </small>
               </div>
 
               <div className="form-group">
@@ -455,6 +642,79 @@ const StudentProfile = () => {
                   placeholder="Tell us about yourself, your goals, and interests..."
                   rows="4"
                 />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label form-label-required">
+                  Field(s) of Work / Career Interest
+                </label>
+                <small className="text-muted" style={{ display: 'block', marginBottom: 'var(--spacing-sm)' }}>
+                  Select all fields you're interested in or qualified for. This helps match you with relevant job opportunities.
+                </small>
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))',
+                  gap: 'var(--spacing-xs)',
+                  maxHeight: '300px',
+                  overflowY: 'auto',
+                  padding: 'var(--spacing-sm)',
+                  border: '1px solid var(--border-color)',
+                  borderRadius: '8px',
+                  backgroundColor: 'var(--background-color)'
+                }}>
+                  {workFields.map((field) => (
+                    <label 
+                      key={field}
+                      style={{ 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: 'var(--spacing-xs)',
+                        cursor: 'pointer',
+                        padding: 'var(--spacing-xs)',
+                        borderRadius: '4px',
+                        transition: 'background-color 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'rgba(16, 185, 129, 0.05)'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={formData.fieldsOfWork.includes(field)}
+                        onChange={(e) => {
+                          if (e.target.checked) {
+                            setFormData(prev => ({
+                              ...prev,
+                              fieldsOfWork: [...prev.fieldsOfWork, field]
+                            }));
+                          } else {
+                            setFormData(prev => ({
+                              ...prev,
+                              fieldsOfWork: prev.fieldsOfWork.filter(f => f !== field)
+                            }));
+                          }
+                        }}
+                        style={{ width: 'auto', cursor: 'pointer' }}
+                      />
+                      <span style={{ fontSize: '0.875rem' }}>{field}</span>
+                    </label>
+                  ))}
+                </div>
+                {formData.fieldsOfWork.length > 0 && (
+                  <div style={{ 
+                    marginTop: 'var(--spacing-sm)',
+                    padding: 'var(--spacing-sm)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderRadius: '8px'
+                  }}>
+                    <strong>Selected ({formData.fieldsOfWork.length}):</strong>{' '}
+                    {formData.fieldsOfWork.join(', ')}
+                  </div>
+                )}
+                {formData.fieldsOfWork.length === 0 && (
+                  <small className="text-muted" style={{ display: 'block', marginTop: 'var(--spacing-xs)', color: '#ef4444' }}>
+                    ⚠️ Please select at least one field of work to help match you with relevant jobs
+                  </small>
+                )}
               </div>
               </div>
             </section>
@@ -549,6 +809,40 @@ const StudentProfile = () => {
 
               <div className="form-group">
                 <label className="form-label">Subjects / Courses & Grades</label>
+                
+                {/* Subject Requirements Info */}
+                <div style={{ 
+                  padding: 'var(--spacing-sm)',
+                  marginBottom: 'var(--spacing-md)',
+                  backgroundColor: formData.highSchool.subjects.length >= 7 && getMissingMandatorySubjects().length === 0 
+                    ? '#d1fae5' 
+                    : '#fef3c7',
+                  borderRadius: '8px',
+                  border: `1px solid ${formData.highSchool.subjects.length >= 7 && getMissingMandatorySubjects().length === 0 ? '#10b981' : '#f59e0b'}`
+                }}>
+                  <div style={{ fontWeight: 600, marginBottom: 'var(--spacing-xs)', fontSize: '0.875rem' }}>
+                    📚 Requirements:
+                  </div>
+                  <ul style={{ margin: 0, paddingLeft: 'var(--spacing-lg)', fontSize: '0.875rem' }}>
+                    <li style={{ color: formData.highSchool.subjects.length >= 7 ? '#10b981' : '#f59e0b' }}>
+                      Minimum 7 subjects required ({formData.highSchool.subjects.length}/7)
+                    </li>
+                    <li>
+                      Mandatory subjects: {getMandatorySubjects().join(', ')}
+                      {getMissingMandatorySubjects().length > 0 && (
+                        <span style={{ color: '#ef4444', fontWeight: 600 }}>
+                          {' '}(Missing: {getMissingMandatorySubjects().join(', ')})
+                        </span>
+                      )}
+                      {getMissingMandatorySubjects().length === 0 && formData.highSchool.subjects.length > 0 && (
+                        <span style={{ color: '#10b981', fontWeight: 600 }}>
+                          {' '}✓ All mandatory subjects added
+                        </span>
+                      )}
+                    </li>
+                  </ul>
+                </div>
+
                 <div style={{ display: 'flex', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
                   <input
                     type="text"

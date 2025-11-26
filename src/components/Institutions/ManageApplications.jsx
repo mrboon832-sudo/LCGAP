@@ -11,6 +11,8 @@ const ManageApplications = ({ user, institutionId }) => {
   const [error, setError] = useState('');
   const [filter, setFilter] = useState('all');
   const [processing, setProcessing] = useState(null);
+  const [selectedApp, setSelectedApp] = useState(null);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     fetchApplications();
@@ -29,26 +31,55 @@ const ManageApplications = ({ user, institutionId }) => {
         snapshot.docs.map(async (appDoc) => {
           const appData = appDoc.data();
           
-          // Fetch student profile for grades
+          // Fetch student profile for grades and name
           let studentProfile = {};
+          let studentName = appData.studentName || 'Unknown Student';
+          let studentEmail = appData.studentEmail || '';
+          
           if (appData.studentId) {
             try {
               const studentDoc = await getDoc(doc(db, 'users', appData.studentId));
               if (studentDoc.exists()) {
                 studentProfile = studentDoc.data();
+                // Use student name from profile if not in appData
+                if (!appData.studentName) {
+                  studentName = studentProfile.name || studentProfile.displayName || 'Unknown Student';
+                }
+                if (!appData.studentEmail) {
+                  studentEmail = studentProfile.email || '';
+                }
               }
             } catch (err) {
               console.error('Error fetching student:', err);
             }
           }
           
-          // Calculate eligibility score
-          const eligibilityScore = calculateEligibility(studentProfile);
+          // Use saved qualificationScore if available, otherwise calculate eligibility
+          const eligibilityScore = appData.qualificationScore || calculateEligibility(studentProfile);
+          
+          // Fetch course name if not in appData
+          let courseName = appData.courseName || '';
+          if (!courseName && appData.courseId && appData.facultyId) {
+            try {
+              const courseDoc = await getDoc(doc(db, 'institutions', appData.institutionId, 'faculties', appData.facultyId, 'courses', appData.courseId));
+              if (courseDoc.exists()) {
+                courseName = courseDoc.data().name || appData.courseId;
+              }
+            } catch (err) {
+              console.error('Error fetching course:', err);
+              courseName = appData.courseId;
+            }
+          } else if (!courseName) {
+            courseName = appData.courseId;
+          }
           
           return {
             id: appDoc.id,
             ...appData,
             studentProfile,
+            studentName,
+            studentEmail,
+            courseName,
             eligibilityScore
           };
         })
@@ -72,31 +103,86 @@ const ManageApplications = ({ user, institutionId }) => {
 
   const calculateEligibility = (profile) => {
     let score = 0;
+    let breakdown = { highSchool: 0, academic: 0, certificates: 0, experience: 0, subjects: 0 };
     
-    // High school info (30 points)
-    if (profile.highSchool) {
-      if (profile.highSchool.gpa) score += 20;
-      if (profile.highSchool.subjects && profile.highSchool.subjects.length > 0) score += 10;
+    // High school GPA (35 points) - Enhanced scoring
+    if (profile.highSchool && profile.highSchool.gpa) {
+      const hsGpa = parseFloat(profile.highSchool.gpa);
+      if (!isNaN(hsGpa)) {
+        // For GPA scale (typically 0-4.0 or 0-5.0)
+        if (hsGpa <= 5.0) {
+          if (hsGpa >= 4.0) breakdown.highSchool = 35;
+          else if (hsGpa >= 3.5) breakdown.highSchool = 30;
+          else if (hsGpa >= 3.0) breakdown.highSchool = 25;
+          else if (hsGpa >= 2.5) breakdown.highSchool = 18;
+          else if (hsGpa >= 2.0) breakdown.highSchool = 10;
+          else breakdown.highSchool = 5;
+        }
+        // For percentage scale (0-100)
+        else if (hsGpa <= 100) {
+          if (hsGpa >= 85) breakdown.highSchool = 35;
+          else if (hsGpa >= 75) breakdown.highSchool = 30;
+          else if (hsGpa >= 65) breakdown.highSchool = 25;
+          else if (hsGpa >= 55) breakdown.highSchool = 18;
+          else if (hsGpa >= 50) breakdown.highSchool = 10;
+          else breakdown.highSchool = 5;
+        }
+      }
     }
     
-    // Academic performance (40 points)
-    if (profile.academicPerformance) {
+    // High school subjects with grades (15 points)
+    if (profile.highSchool && profile.highSchool.subjects && profile.highSchool.subjects.length > 0) {
+      const subjectsCount = profile.highSchool.subjects.length;
+      const avgGrade = profile.highSchool.subjects.reduce((sum, subj) => {
+        const grade = parseFloat(subj.grade);
+        return sum + (isNaN(grade) ? 0 : grade);
+      }, 0) / subjectsCount;
+      
+      if (subjectsCount >= 5) {
+        if (avgGrade >= 80 || avgGrade >= 3.5) breakdown.subjects = 15;
+        else if (avgGrade >= 70 || avgGrade >= 3.0) breakdown.subjects = 12;
+        else if (avgGrade >= 60 || avgGrade >= 2.5) breakdown.subjects = 8;
+        else breakdown.subjects = 5;
+      } else if (subjectsCount >= 3) {
+        breakdown.subjects = 8;
+      } else {
+        breakdown.subjects = 5;
+      }
+    }
+    
+    // Current academic performance (30 points)
+    if (profile.academicPerformance && profile.academicPerformance.gpa) {
       const gpa = parseFloat(profile.academicPerformance.gpa || 0);
-      if (gpa >= 3.5) score += 40;
-      else if (gpa >= 3.0) score += 30;
-      else if (gpa >= 2.5) score += 20;
-      else if (gpa > 0) score += 10;
+      if (!isNaN(gpa)) {
+        if (gpa <= 5.0) {
+          if (gpa >= 3.7) breakdown.academic = 30;
+          else if (gpa >= 3.3) breakdown.academic = 25;
+          else if (gpa >= 3.0) breakdown.academic = 20;
+          else if (gpa >= 2.5) breakdown.academic = 15;
+          else if (gpa >= 2.0) breakdown.academic = 8;
+          else breakdown.academic = 3;
+        } else if (gpa <= 100) {
+          if (gpa >= 85) breakdown.academic = 30;
+          else if (gpa >= 75) breakdown.academic = 25;
+          else if (gpa >= 65) breakdown.academic = 20;
+          else if (gpa >= 55) breakdown.academic = 15;
+          else breakdown.academic = 8;
+        }
+      }
     }
     
-    // Certificates (15 points)
+    // Certificates (10 points)
     if (profile.certificates && profile.certificates.length > 0) {
-      score += Math.min(profile.certificates.length * 5, 15);
+      breakdown.certificates = Math.min(profile.certificates.length * 3, 10);
     }
     
-    // Work experience (15 points)
+    // Work experience (10 points)
     if (profile.workExperience && profile.workExperience.length > 0) {
-      score += Math.min(profile.workExperience.length * 5, 15);
+      breakdown.experience = Math.min(profile.workExperience.length * 3, 10);
     }
+    
+    // Calculate total
+    score = breakdown.highSchool + breakdown.subjects + breakdown.academic + breakdown.certificates + breakdown.experience;
     
     return Math.min(score, 100);
   };
@@ -109,19 +195,19 @@ const ManageApplications = ({ user, institutionId }) => {
     let newStatus = '';
     
     if (action === 'accept') {
-      if (app.eligibilityScore >= 70) {
+      if (app.eligibilityScore >= 60) {
         newStatus = 'accepted';
         message = 'Are you sure you want to accept this student?';
       } else {
-        setError('Student must have at least 70% eligibility to be accepted directly');
+        setError('Student must have at least 60% eligibility to be accepted directly');
         return;
       }
     } else if (action === 'waitlist') {
-      if (app.eligibilityScore >= 50) {
+      if (app.eligibilityScore >= 40) {
         newStatus = 'waiting';
         message = 'Place this student on the waiting list?';
       } else {
-        setError('Student must have at least 50% eligibility to be waitlisted');
+        setError('Student must have at least 40% eligibility to be waitlisted');
         return;
       }
     } else if (action === 'reject') {
@@ -161,9 +247,20 @@ const ManageApplications = ({ user, institutionId }) => {
   };
 
   const getEligibilityBadge = (score) => {
-    if (score >= 70) return { class: 'badge-success', text: 'Highly Eligible' };
-    if (score >= 50) return { class: 'badge-warning', text: 'Eligible for Waitlist' };
-    return { class: 'badge-danger', text: 'Not Eligible' };
+    if (score >= 75) return { class: 'badge-success', text: 'Highly Qualified' };
+    if (score >= 60) return { class: 'badge-success', text: 'Qualified' };
+    if (score >= 40) return { class: 'badge-warning', text: 'Eligible for Waitlist' };
+    return { class: 'badge-danger', text: 'Below Requirements' };
+  };
+
+  const handleViewDetails = (app) => {
+    setSelectedApp(app);
+    setShowModal(true);
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
+    setSelectedApp(null);
   };
 
   if (loading) {
@@ -371,49 +468,250 @@ const ManageApplications = ({ user, institutionId }) => {
                 </div>
 
                 {/* Actions */}
-                {app.status === 'pending' && (
-                  <div style={{ 
-                    display: 'flex', 
-                    gap: 'var(--spacing-sm)', 
-                    flexWrap: 'wrap',
-                    padding: 'var(--spacing-md)',
-                    backgroundColor: 'var(--background-secondary)',
-                    borderRadius: '12px',
-                    marginTop: 'var(--spacing-md)'
-                  }}>
-                    {app.eligibilityScore >= 70 && (
+                <div style={{ 
+                  display: 'flex', 
+                  gap: 'var(--spacing-sm)', 
+                  flexWrap: 'wrap',
+                  padding: 'var(--spacing-md)',
+                  backgroundColor: 'var(--background-secondary)',
+                  borderRadius: '12px',
+                  marginTop: 'var(--spacing-md)'
+                }}>
+                  <button
+                    className="btn btn-primary hover-scale-sm"
+                    onClick={() => handleViewDetails(app)}
+                  >
+                    👁️ View Details
+                  </button>
+                  
+                  {app.status === 'pending' && (
+                    <>
+                      {app.eligibilityScore >= 60 && (
+                        <button
+                          className="btn btn-success hover-scale-sm"
+                          onClick={() => handleAction(app.id, 'accept')}
+                          disabled={processing === app.id}
+                        >
+                          ✅ Accept (60%+)
+                        </button>
+                      )}
+                      {app.eligibilityScore >= 40 && app.eligibilityScore < 60 && (
+                        <button
+                          className="btn btn-warning hover-scale-sm"
+                          onClick={() => handleAction(app.id, 'waitlist')}
+                          disabled={processing === app.id}
+                        >
+                          📝 Waitlist (40-59%)
+                        </button>
+                      )}
                       <button
-                        className="btn btn-success hover-scale-sm"
-                        onClick={() => handleAction(app.id, 'accept')}
+                        className="btn btn-danger hover-scale-sm"
+                        onClick={() => handleAction(app.id, 'reject')}
                         disabled={processing === app.id}
                       >
-                        ✅ Accept (70%+)
+                        ❌ Reject
                       </button>
-                    )}
-                    {app.eligibilityScore >= 50 && app.eligibilityScore < 70 && (
-                      <button
-                        className="btn btn-warning hover-scale-sm"
-                        onClick={() => handleAction(app.id, 'waitlist')}
-                        disabled={processing === app.id}
-                      >
-                        📝 Waitlist (50%+)
-                      </button>
-                    )}
-                    <button
-                      className="btn btn-danger hover-scale-sm"
-                      onClick={() => handleAction(app.id, 'reject')}
-                      disabled={processing === app.id}
-                    >
-                      ❌ Reject
-                    </button>
-                  </div>
-                )}
+                    </>
+                  )}
+                </div>
 
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginTop: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
                   📅 Applied: {app.createdAt ? new Date(app.createdAt.seconds * 1000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : 'N/A'}
                 </p>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Details Modal */}
+        {showModal && selectedApp && (
+          <div className="modal-overlay" onClick={closeModal}>
+            <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', maxHeight: '90vh', overflow: 'auto' }}>
+              <div className="modal-header gradient-bg" style={{ color: 'white' }}>
+                <h2 style={{ margin: 0 }}>👤 Application Details</h2>
+                <button className="close-btn" onClick={closeModal} style={{ color: 'white' }}>&times;</button>
+              </div>
+
+              <div className="modal-body">
+                {/* Student Info */}
+                <div className="card" style={{ marginBottom: 'var(--spacing-lg)', background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, white 100%)' }}>
+                  <h3 style={{ marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+                    <span className="icon-badge">👤</span> Student Information
+                  </h3>
+                  <div className="grid grid-2">
+                    <div>
+                      <p><strong>Name:</strong> {selectedApp.studentProfile?.displayName || selectedApp.studentName || 'N/A'}</p>
+                      <p><strong>Email:</strong> {selectedApp.studentProfile?.email || selectedApp.studentEmail || 'N/A'}</p>
+                      <p><strong>Phone:</strong> {selectedApp.studentProfile?.phoneNumber || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p><strong>Date of Birth:</strong> {selectedApp.studentProfile?.dateOfBirth || 'N/A'}</p>
+                      <p><strong>Gender:</strong> {selectedApp.studentProfile?.gender || 'N/A'}</p>
+                      <p><strong>Address:</strong> {selectedApp.studentProfile?.address || 'N/A'}</p>
+                    </div>
+                  </div>
+                  {selectedApp.studentProfile?.fieldsOfWork && selectedApp.studentProfile.fieldsOfWork.length > 0 && (
+                    <div style={{ marginTop: 'var(--spacing-md)', paddingTop: 'var(--spacing-md)', borderTop: '1px solid var(--border-color)' }}>
+                      <p><strong>Fields of Work Interest:</strong> {selectedApp.studentProfile.fieldsOfWork.join(', ')}</p>
+                    </div>
+                  )}
+                  {selectedApp.studentProfile?.bio && (
+                    <div style={{ marginTop: 'var(--spacing-md)', paddingTop: 'var(--spacing-md)', borderTop: '1px solid var(--border-color)' }}>
+                      <p><strong>Bio:</strong></p>
+                      <p style={{ whiteSpace: 'pre-wrap', fontSize: '0.875rem', color: 'var(--text-muted)' }}>{selectedApp.studentProfile.bio}</p>
+                    </div>
+                  )}
+                </div>
+
+                {/* Academic Performance */}
+                {selectedApp.studentProfile?.academicPerformance && (
+                  <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
+                    <h3 style={{ marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+                      <span className="icon-badge">🎓</span> Academic Performance
+                    </h3>
+                    <div className="grid grid-2">
+                      <p><strong>GPA:</strong> {selectedApp.studentProfile.academicPerformance.gpa || 'N/A'}</p>
+                      <p><strong>Level:</strong> {selectedApp.studentProfile.academicPerformance.level || 'N/A'}</p>
+                      <p><strong>Major:</strong> {selectedApp.studentProfile.academicPerformance.major || 'N/A'}</p>
+                      <p><strong>Institution:</strong> {selectedApp.studentProfile.academicPerformance.institution || 'N/A'}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* High School */}
+                {selectedApp.studentProfile?.highSchool && (
+                  <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
+                    <h3 style={{ marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+                      <span className="icon-badge">🏫</span> High School
+                    </h3>
+                    <p><strong>School:</strong> {selectedApp.studentProfile.highSchool.name || 'N/A'}</p>
+                    <p><strong>Location:</strong> {selectedApp.studentProfile.highSchool.location || 'N/A'}</p>
+                    <p><strong>Graduation Year:</strong> {selectedApp.studentProfile.highSchool.graduationYear || 'N/A'}</p>
+                    <p><strong>GPA:</strong> {selectedApp.studentProfile.highSchool.gpa || 'N/A'}</p>
+                    {selectedApp.studentProfile.highSchool.subjects && selectedApp.studentProfile.highSchool.subjects.length > 0 && (
+                      <div style={{ marginTop: 'var(--spacing-sm)' }}>
+                        <strong>Subjects ({selectedApp.studentProfile.highSchool.subjects.length}):</strong>
+                        <div style={{ marginTop: 'var(--spacing-xs)', display: 'flex', flexWrap: 'wrap', gap: 'var(--spacing-xs)' }}>
+                          {selectedApp.studentProfile.highSchool.subjects.map((subj, idx) => (
+                            <span key={idx} className="badge" style={{ fontSize: '0.875rem' }}>
+                              {typeof subj === 'string' ? subj : `${subj.name} (${subj.grade})`}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Certificates */}
+                {selectedApp.studentProfile?.certificates && selectedApp.studentProfile.certificates.length > 0 && (
+                  <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
+                    <h3 style={{ marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+                      <span className="icon-badge">📜</span> Certificates ({selectedApp.studentProfile.certificates.length})
+                    </h3>
+                    {selectedApp.studentProfile.certificates.map((cert, idx) => (
+                      <div key={idx} style={{ marginBottom: 'var(--spacing-sm)', padding: 'var(--spacing-sm)', backgroundColor: 'var(--background-color)', borderRadius: '8px' }}>
+                        <p><strong>{cert.name || 'Certificate'}</strong></p>
+                        {cert.issuer && <p style={{ fontSize: '0.875rem' }}>Issued by: {cert.issuer}</p>}
+                        {cert.dateIssued && <p style={{ fontSize: '0.875rem' }}>Date: {cert.dateIssued}</p>}
+                        {cert.description && <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>{cert.description}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Work Experience */}
+                {selectedApp.studentProfile?.workExperience && selectedApp.studentProfile.workExperience.length > 0 && (
+                  <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
+                    <h3 style={{ marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+                      <span className="icon-badge">💼</span> Work Experience ({selectedApp.studentProfile.workExperience.length})
+                    </h3>
+                    {selectedApp.studentProfile.workExperience.map((exp, idx) => (
+                      <div key={idx} style={{ marginBottom: 'var(--spacing-md)', paddingBottom: 'var(--spacing-md)', borderBottom: idx < selectedApp.studentProfile.workExperience.length - 1 ? '1px solid var(--border-color)' : 'none' }}>
+                        <p><strong>{exp.title || exp.position || 'Position'}</strong> {exp.company && `at ${exp.company}`}</p>
+                        {(exp.startDate || exp.endDate) && (
+                          <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                            {exp.startDate || 'N/A'} - {exp.current ? 'Present' : (exp.endDate || 'N/A')}
+                          </p>
+                        )}
+                        {exp.location && <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>📍 {exp.location}</p>}
+                        {exp.description && <p style={{ fontSize: '0.875rem', marginTop: 'var(--spacing-xs)' }}>{exp.description}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {/* Motivation */}
+                {selectedApp.motivation && (
+                  <div className="card" style={{ marginBottom: 'var(--spacing-lg)' }}>
+                    <h3 style={{ marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+                      <span className="icon-badge">💡</span> Motivation
+                    </h3>
+                    <p style={{ whiteSpace: 'pre-wrap' }}>{selectedApp.motivation}</p>
+                  </div>
+                )}
+
+                {/* Eligibility Score */}
+                <div className="card" style={{ background: 'linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%)' }}>
+                  <h3 style={{ marginBottom: 'var(--spacing-md)', display: 'flex', alignItems: 'center', gap: 'var(--spacing-xs)' }}>
+                    <span className="icon-badge">📊</span> Eligibility Assessment
+                  </h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-lg)' }}>
+                    <div style={{ fontSize: '3rem', fontWeight: 'bold', color: selectedApp.eligibilityScore >= 70 ? '#10b981' : selectedApp.eligibilityScore >= 50 ? '#f59e0b' : '#ef4444' }}>
+                      {selectedApp.eligibilityScore}%
+                    </div>
+                    <div>
+                      <span className={`badge ${getEligibilityBadge(selectedApp.eligibilityScore).class}`} style={{ fontSize: '1rem', padding: '0.5rem 1rem' }}>
+                        {getEligibilityBadge(selectedApp.eligibilityScore).text}
+                      </span>
+                      <p style={{ marginTop: 'var(--spacing-sm)', fontSize: '0.875rem', color: 'var(--text-muted)' }}>
+                        Based on academic performance, certificates, and experience
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons in Modal */}
+                {selectedApp.status === 'pending' && (
+                  <div style={{ marginTop: 'var(--spacing-lg)', display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
+                    {selectedApp.eligibilityScore >= 60 && (
+                      <button
+                        className="btn btn-success"
+                        onClick={() => {
+                          closeModal();
+                          handleAction(selectedApp.id, 'accept');
+                        }}
+                        disabled={processing === selectedApp.id}
+                      >
+                        ✅ Accept Application (60%+)
+                      </button>
+                    )}
+                    {selectedApp.eligibilityScore >= 40 && (
+                      <button
+                        className="btn btn-warning"
+                        onClick={() => {
+                          closeModal();
+                          handleAction(selectedApp.id, 'waitlist');
+                        }}
+                        disabled={processing === selectedApp.id}
+                      >
+                        📝 Add to Waitlist (40%+)
+                      </button>
+                    )}
+                    <button
+                      className="btn btn-danger"
+                      onClick={() => {
+                        closeModal();
+                        handleAction(selectedApp.id, 'reject');
+                      }}
+                      disabled={processing === selectedApp.id}
+                    >
+                      ❌ Reject Application
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
           </div>
         )}
       </div>

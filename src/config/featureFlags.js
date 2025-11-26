@@ -5,7 +5,7 @@
 const featureFlags = {
   // When true, the app will NOT require email verification for login or dashboard access.
   // Signup will also skip sending the verification email and mark the user verified immediately.
-  bypassEmailVerification: true,
+  bypassEmailVerification: false,
 };
 
 export default featureFlags;
