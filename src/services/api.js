@@ -246,23 +246,37 @@ export const applyToCourse = async (studentId, institutionId, courseId, applicat
     if (studentSnap.exists()) {
       const student = studentSnap.data();
       const studentGPA = parseFloat(student.academicPerformance?.gpa || student.highSchool?.gpa || 0);
+      const studentLevel = student.academicPerformance?.level || student.highSchool?.level || '';
       
-      // Note: GPA and level checks are informational only
-      // Students can still apply even if they don't meet exact requirements
-      // The institution will review and make final decision
-      
-      // Store qualification info for institution to review, but don't block application
-      applicationData.qualificationNote = '';
-      
+      // Check GPA requirements
       if (requirements.toLowerCase().includes('gpa')) {
-        const gpaMatch = requirements.match(/(\d+\.?\d*)/);
-        if (gpaMatch && studentGPA > 0) {
+        const gpaMatch = requirements.match(/gpa[:\s]*(\d+\.?\d*)/i);
+        if (gpaMatch) {
           const requiredGPA = parseFloat(gpaMatch[1]);
-          if (studentGPA < requiredGPA) {
-            applicationData.qualificationNote += `Note: Student GPA (${studentGPA}) is below minimum requirement (${requiredGPA}). `;
+          if (studentGPA > 0 && studentGPA < requiredGPA) {
+            throw new Error(`You do not meet the minimum GPA requirement (${requiredGPA}). Your GPA: ${studentGPA}`);
           }
         }
       }
+      
+      // Check level requirements (e.g., "Form E" or "Grade 12")
+      if (requirements.toLowerCase().includes('form') || requirements.toLowerCase().includes('grade')) {
+        const levelMatch = requirements.match(/(form\s+[a-e]|grade\s+\d+)/i);
+        if (levelMatch && studentLevel) {
+          const requiredLevel = levelMatch[1].toLowerCase();
+          const studentLevelLower = studentLevel.toLowerCase();
+          
+          // Simple level check - can be enhanced based on your grading system
+          if (!studentLevelLower.includes(requiredLevel.replace('form ', '').replace('grade ', ''))) {
+            applicationData.qualificationNote = `Note: Your level (${studentLevel}) may not match requirement (${levelMatch[1]}).`;
+          }
+        }
+      }
+      
+      // Store that qualification was checked
+      applicationData.qualificationChecked = true;
+      applicationData.studentGPA = studentGPA;
+      applicationData.studentLevel = studentLevel;
     }
   }
 
@@ -549,6 +563,48 @@ export const getJobs = async (filters = {}) => {
   
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+// Get jobs filtered by student qualifications
+export const getQualifiedJobs = async (studentId) => {
+  // Get all jobs
+  const allJobs = await getJobs();
+  
+  // Get student profile
+  const studentProfile = await getUserProfile(studentId);
+  if (!studentProfile) return allJobs;
+  
+  const studentGPA = parseFloat(studentProfile.academicPerformance?.gpa || studentProfile.highSchool?.gpa || 0);
+  const studentField = studentProfile.academicPerformance?.field || studentProfile.profile?.field || '';
+  
+  // Filter jobs based on requirements
+  return allJobs.filter(job => {
+    const requirements = (job.requirements || '').toLowerCase();
+    
+    // If no requirements, show the job
+    if (!requirements) return true;
+    
+    // Check GPA requirement
+    const gpaMatch = requirements.match(/gpa[:\s]*(\d+\.?\d*)/i);
+    if (gpaMatch) {
+      const requiredGPA = parseFloat(gpaMatch[1]);
+      if (studentGPA > 0 && studentGPA < requiredGPA) {
+        return false; // Student doesn't meet GPA requirement
+      }
+    }
+    
+    // Check field requirement
+    if (job.field && studentField) {
+      if (job.field.toLowerCase() !== studentField.toLowerCase()) {
+        // Allow if requirements don't strictly mention the field
+        if (requirements.includes(job.field.toLowerCase())) {
+          return false;
+        }
+      }
+    }
+    
+    return true; // Student qualifies
+  });
 };
 
 export const getJob = async (jobId) => {

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, getDocs, orderBy } from 'firebase/firestore';
-import { db } from '../../services/firebase';
+import { getQualifiedJobs } from '../../services/api';
 import { Link } from 'react-router-dom';
 import Footer from '../Layout/Footer';
 import '../../styles/base.css';
@@ -13,18 +12,21 @@ const JobsPage = ({ user }) => {
 
   useEffect(() => {
     fetchJobs();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.uid]);
 
   const fetchJobs = async () => {
     try {
-      const jobsRef = collection(db, 'jobs');
-      const q = query(jobsRef, orderBy('createdAt', 'desc'));
-      const querySnapshot = await getDocs(q);
+      let jobsList = [];
       
-      const jobsList = querySnapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
+      // For students, only show qualified jobs
+      if (user?.role === 'student' && user?.uid) {
+        jobsList = await getQualifiedJobs(user.uid);
+      } else {
+        // For non-students or non-logged in users, show all jobs
+        const { getJobs } = await import('../../services/api');
+        jobsList = await getJobs();
+      }
       
       setJobs(jobsList);
       setLoading(false);
