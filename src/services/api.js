@@ -361,7 +361,36 @@ export const getInstitutionApplications = async (institutionId) => {
     where('institutionId', '==', institutionId)
   );
   const snapshot = await getDocs(q);
-  const apps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  const apps = await Promise.all(snapshot.docs.map(async (docSnap) => {
+    const appData = { id: docSnap.id, ...docSnap.data() };
+    
+    // Fetch student name
+    if (appData.studentId) {
+      try {
+        const studentDoc = await getDoc(doc(db, 'users', appData.studentId));
+        if (studentDoc.exists()) {
+          appData.studentName = studentDoc.data().displayName || studentDoc.data().email || 'Unknown Student';
+        }
+      } catch (err) {
+        console.error('Error fetching student:', err);
+      }
+    }
+    
+    // Fetch course name
+    if (appData.courseId) {
+      try {
+        const courseDoc = await getDoc(doc(db, 'courses', appData.courseId));
+        if (courseDoc.exists()) {
+          appData.courseName = courseDoc.data().name || 'Unknown Course';
+        }
+      } catch (err) {
+        console.error('Error fetching course:', err);
+      }
+    }
+    
+    return appData;
+  }));
+  
   // Sort by appliedAt or createdAt on client side
   return apps.sort((a, b) => {
     const aTime = a.appliedAt?.seconds || a.createdAt?.seconds || 0;

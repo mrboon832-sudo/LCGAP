@@ -284,9 +284,9 @@ const InstituteDashboard = ({ user, institutionId }) => {
                       }}
                     >
                       <td style={{ padding: 'var(--spacing-md)' }}>
-                        <strong>{app.studentId}</strong>
+                        <strong>{app.studentName || app.studentEmail || 'Unknown Student'}</strong>
                       </td>
-                      <td style={{ padding: 'var(--spacing-md)' }}>{app.courseId}</td>
+                      <td style={{ padding: 'var(--spacing-md)' }}>{app.courseName || 'Unknown Course'}</td>
                       <td style={{ 
                         padding: 'var(--spacing-md)', 
                         fontSize: '0.875rem', 
