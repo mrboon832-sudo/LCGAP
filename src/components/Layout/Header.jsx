@@ -46,9 +46,9 @@ const Header = ({ user, onLogout }) => {
           )}
           {user?.role === 'admin' && (
             <>
-              <Link to="/institutions">Institutions</Link>
-              <Link to="/companies">Companies</Link>
-              <Link to="/users">Users</Link>
+              <Link to="/admin/institutions">Institutions</Link>
+              <Link to="/admin/companies">Companies</Link>
+              <Link to="/admin/reports">Reports</Link>
               <Link to="/jobs">Jobs</Link>
               <Link to="/applications">Applications</Link>
             </>

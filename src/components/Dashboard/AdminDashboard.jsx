@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import Footer from '../Layout/Footer';
@@ -81,11 +82,11 @@ const AdminDashboard = ({ user }) => {
         <div className="card-header">
           <h3 className="card-title">Quick Actions</h3>
         </div>
-        <div className="flex gap-md flex-wrap">
-          <button className="btn btn-primary">Add Institution</button>
-          <button className="btn btn-secondary">Manage Users</button>
-          <a href="/jobs" className="btn btn-outline">View Jobs</a>
-          <a href="/applications" className="btn btn-outline">View Applications</a>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-md)' }}>
+          <Link to="/admin/institutions" className="btn btn-primary" style={{ textDecoration: 'none', textAlign: 'center' }}>🏫 Manage Institutions</Link>
+          <Link to="/admin/companies" className="btn btn-secondary" style={{ textDecoration: 'none', textAlign: 'center' }}>🏢 Manage Companies</Link>
+          <Link to="/admin/reports" className="btn btn-outline" style={{ textDecoration: 'none', textAlign: 'center' }}>📊 System Reports</Link>
+          <Link to="/applications" className="btn btn-outline" style={{ textDecoration: 'none', textAlign: 'center' }}>📝 Applications</Link>
         </div>
       </div>
 
