@@ -128,10 +128,13 @@ service cloud.firestore {
       allow create: if isAuthenticated()
         && request.auth.uid == request.resource.data.studentId;
       
-      // Only institution owner, student (for accepting/selecting final admission), or admin can update
+      // Allow update for:
+      // 1. Admin (can do anything)
+      // 2. Student who owns the application (for final admission selection, declining, etc.)
+      // 3. Institution owner (for accepting/rejecting applications)
       allow update: if isAuthenticated() && (
         isAdmin()
-        || request.auth.uid == resource.data.studentId
+        || (request.auth.uid == resource.data.studentId && resource.data.studentId == request.resource.data.studentId)
         || (exists(/databases/$(database)/documents/institutions/$(resource.data.institutionId))
             && get(/databases/$(database)/documents/institutions/$(resource.data.institutionId)).data.createdBy == request.auth.uid)
       );
