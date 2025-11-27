@@ -130,11 +130,14 @@ service cloud.firestore {
       
       // Allow update for:
       // 1. Admin (can do anything)
-      // 2. Student who owns the application (for final admission selection, declining, etc.)
+      // 2. Student who owns the application (can update status, confirm/decline admission)
+      //    - Must not change the studentId to someone else
       // 3. Institution owner (for accepting/rejecting applications)
       allow update: if isAuthenticated() && (
         isAdmin()
-        || (request.auth.uid == resource.data.studentId && resource.data.studentId == request.resource.data.studentId)
+        || (request.auth.uid == resource.data.studentId 
+            && (!request.resource.data.keys().hasAny(['studentId']) 
+                || request.resource.data.studentId == resource.data.studentId))
         || (exists(/databases/$(database)/documents/institutions/$(resource.data.institutionId))
             && get(/databases/$(database)/documents/institutions/$(resource.data.institutionId)).data.createdBy == request.auth.uid)
       );

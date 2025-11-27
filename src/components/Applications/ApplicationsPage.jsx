@@ -102,11 +102,13 @@ const ApplicationsPage = ({ user }) => {
       
       setApplications(sortByDate(courseAppsList));
       setJobApplications(sortByDate(jobAppsList));
+      setError(''); // Clear any previous errors
       setLoading(false);
     } catch (err) {
       console.error('Error fetching applications:', err);
       console.error('Error details:', err.message);
-      setError('Failed to load applications. Please try again.');
+      console.error('Error code:', err.code);
+      setError(err.message || 'Failed to load applications. Please try again.');
       setLoading(false);
     }
   };
@@ -160,12 +162,18 @@ const ApplicationsPage = ({ user }) => {
     
     try {
       const currentUser = auth.currentUser;
+      console.log('Selecting final admission for:', currentUser.uid, appId);
       const result = await selectFinalAdmission(currentUser.uid, appId);
+      console.log('Final admission selected successfully:', result);
       setSuccess(result.message);
-      fetchApplications(); // Refresh the list
+      setError(''); // Explicitly clear error
+      await fetchApplications(); // Refresh the list
     } catch (err) {
       console.error('Error selecting final admission:', err);
+      console.error('Error code:', err.code);
+      console.error('Error message:', err.message);
       setError(err.message || 'Failed to select final admission. Please try again.');
+      setSuccess(''); // Clear success message on error
     } finally {
       setProcessingApp(null);
     }
