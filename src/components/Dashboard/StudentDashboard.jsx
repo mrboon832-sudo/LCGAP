@@ -87,6 +87,9 @@ const StudentDashboard = ({ user }) => {
   const admittedCount = applications.filter(a => a.status === 'admitted').length;
   const totalApplications = applications.length;
   const applicationProgress = totalApplications > 0 ? (admittedCount / totalApplications) * 100 : 0;
+  
+  // Show loading only if we haven't fetched data yet
+  const showLoading = loading && applications.length === 0 && jobApplications.length === 0;
 
   return (
     <div className="theme-student">
@@ -138,7 +141,7 @@ const StudentDashboard = ({ user }) => {
             </div>
             <div>
               <h3 style={{ color: 'var(--primary-color)', marginBottom: '0.25rem', fontSize: '2rem' }}>
-                {loading ? '...' : applications.length}
+                {showLoading ? '...' : applications.length}
               </h3>
               <p className="text-muted" style={{ margin: 0 }}>Course Applications</p>
             </div>
@@ -155,7 +158,7 @@ const StudentDashboard = ({ user }) => {
             </div>
             <div>
               <h3 style={{ color: '#10b981', marginBottom: '0.25rem', fontSize: '2rem' }}>
-                {loading ? '...' : admittedCount}
+                {showLoading ? '...' : admittedCount}
               </h3>
               <p className="text-muted" style={{ margin: 0 }}>Admissions</p>
             </div>
@@ -172,7 +175,7 @@ const StudentDashboard = ({ user }) => {
             </div>
             <div>
               <h3 style={{ color: '#f59e0b', marginBottom: '0.25rem', fontSize: '2rem' }}>
-                {loading ? '...' : jobApplications.length}
+                {showLoading ? '...' : jobApplications.length}
               </h3>
               <p className="text-muted" style={{ margin: 0 }}>Job Applications</p>
             </div>
