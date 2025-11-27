@@ -242,6 +242,12 @@ const ApplicationsPage = ({ user }) => {
   return (
     <div className={getThemeClass()}>
       <div className="container" style={{ paddingTop: 'var(--spacing-lg)' }}>
+      {/* Breadcrumb Navigation */}
+      <nav style={{ marginBottom: 'var(--spacing-md)', fontSize: '0.875rem' }}>
+        <Link to="/dashboard" style={{ color: 'var(--primary-color)', textDecoration: 'none' }}>Dashboard</Link>
+        <span style={{ margin: '0 0.5rem', color: 'var(--text-muted)' }}>›</span>
+        <span style={{ color: 'var(--text-muted)' }}>My Applications</span>
+      </nav>
       {/* Header with Gradient */}
       <div className="card gradient-bg" style={{ 
         padding: 'var(--spacing-xl)',

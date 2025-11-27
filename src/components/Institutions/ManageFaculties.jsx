@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { getFaculties, createFaculty, updateFaculty, deleteFaculty } from '../../services/api';
 import Footer from '../Layout/Footer';
 import '../../styles/base.css';
@@ -99,6 +100,12 @@ const ManageFaculties = ({ user, institutionId }) => {
   return (
     <div className="theme-institute">
       <div className="container" style={{ paddingTop: 'var(--spacing-lg)' }}>
+        {/* Breadcrumb Navigation */}
+        <nav style={{ marginBottom: 'var(--spacing-md)', fontSize: '0.875rem' }}>
+          <Link to="/dashboard" style={{ color: 'var(--primary-color)', textDecoration: 'none' }}>Dashboard</Link>
+          <span style={{ margin: '0 0.5rem', color: 'var(--text-muted)' }}>›</span>
+          <span style={{ color: 'var(--text-muted)' }}>Manage Faculties</span>
+        </nav>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 'var(--spacing-lg)' }}>
           <h1>Manage Faculties</h1>
           {!showForm && (
@@ -169,34 +176,42 @@ const ManageFaculties = ({ user, institutionId }) => {
           {faculties.length === 0 ? (
             <p className="text-muted">No faculties yet. Create your first faculty above!</p>
           ) : (
-            <div className="grid grid-2" style={{ marginTop: 'var(--spacing-md)' }}>
-              {faculties.map(faculty => (
-                <div key={faculty.id} className="card" style={{ marginBottom: 0 }}>
-                  <h3>{faculty.name}</h3>
-                  {faculty.dean && (
-                    <p className="text-muted"><strong>Dean:</strong> {faculty.dean}</p>
-                  )}
-                  {faculty.description && (
-                    <p style={{ fontSize: '0.9rem', marginTop: 'var(--spacing-sm)' }}>
-                      {faculty.description}
-                    </p>
-                  )}
-                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: 'var(--spacing-md)' }}>
-                    <button
-                      className="btn btn-sm btn-secondary"
-                      onClick={() => handleEdit(faculty)}
-                    >
-                      Edit
-                    </button>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => handleDelete(faculty.id)}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              ))}
+            <div style={{ overflowX: 'auto' }}>
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Faculty Name</th>
+                    <th>Dean</th>
+                    <th>Description</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {faculties.map(faculty => (
+                    <tr key={faculty.id}>
+                      <td><strong>{faculty.name}</strong></td>
+                      <td>{faculty.dean || 'N/A'}</td>
+                      <td>{faculty.description || 'No description'}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                          <button
+                            className="btn btn-sm btn-secondary"
+                            onClick={() => handleEdit(faculty)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleDelete(faculty.id)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

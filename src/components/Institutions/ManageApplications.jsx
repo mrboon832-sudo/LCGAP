@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../../services/firebase';
 import { updateApplicationStatus } from '../../services/api';
@@ -286,6 +287,12 @@ const ManageApplications = ({ user, institutionId }) => {
   return (
     <div className="theme-institute">
       <div className="container" style={{ paddingTop: 'var(--spacing-lg)', paddingBottom: 'var(--spacing-xl)' }}>
+        {/* Breadcrumb Navigation */}
+        <nav style={{ marginBottom: 'var(--spacing-md)', fontSize: '0.875rem' }}>
+          <Link to="/dashboard" style={{ color: 'var(--primary-color)', textDecoration: 'none' }}>Dashboard</Link>
+          <span style={{ margin: '0 0.5rem', color: 'var(--text-muted)' }}>›</span>
+          <span style={{ color: 'var(--text-muted)' }}>Manage Applications</span>
+        </nav>
         {/* Header with Gradient */}
         <div className="card gradient-bg" style={{ 
           padding: 'var(--spacing-xl)',

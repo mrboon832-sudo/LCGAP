@@ -293,101 +293,89 @@ const ApplicantsPage = ({ user }) => {
           )}
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: 'var(--spacing-lg)' }}>
-          {filteredApplicants.map(applicant => {
-            const qualBadge = getQualificationBadge(applicant.qualificationScore);
-            
-            return (
-              <div key={applicant.id} className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 'var(--spacing-md)' }}>
-                  <div style={{ flex: 1 }}>
-                    <h3 style={{ marginBottom: 'var(--spacing-xs)' }}>
-                      {applicant.studentName}
-                    </h3>
-                    <p className="text-muted" style={{ marginBottom: 'var(--spacing-xs)' }}>
-                      Applied for: <strong>{applicant.jobTitle}</strong>
-                    </p>
-                    <p className="text-muted" style={{ fontSize: '0.875rem' }}>
-                      {applicant.studentEmail}
-                    </p>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{ 
-                      fontSize: '2rem', 
-                      fontWeight: 'bold', 
-                      color: applicant.isQualified ? 'var(--success-color)' : 'var(--warning-color)',
-                      marginBottom: 'var(--spacing-xs)'
-                    }}>
-                      {applicant.qualificationScore}%
-                    </div>
-                    <span className={`badge ${qualBadge.class}`}>
-                      {qualBadge.text}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Qualification Breakdown */}
-                <div style={{ 
-                  padding: 'var(--spacing-md)', 
-                  backgroundColor: 'var(--background-color)', 
-                  borderRadius: 'var(--border-radius)',
-                  marginBottom: 'var(--spacing-md)'
-                }}>
-                  <h4 style={{ marginBottom: 'var(--spacing-sm)', fontSize: '0.875rem', textTransform: 'uppercase' }}>
-                    Qualification Breakdown
-                  </h4>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-sm)' }}>
-                    <div>
-                      <strong>📚 Academic:</strong> {applicant.academicPerformance?.gpa || applicant.academicPerformance?.grade || 'N/A'}
-                    </div>
-                    <div>
-                      <strong>💼 Experience:</strong> {applicant.workExperience?.length || 0} positions
-                    </div>
-                    <div>
-                      <strong>🎯 Relevance:</strong> {applicant.qualificationScore >= 70 ? 'High' : applicant.qualificationScore >= 50 ? 'Medium' : 'Low'}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Application Date */}
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: 'var(--spacing-md)' }}>
-                  Applied: {applicant.createdAt ? new Date(applicant.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
-                </p>
-
-                {/* Actions */}
-                <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
-                  <button 
-                    className="btn btn-primary"
-                    onClick={() => viewApplicantDetails(applicant)}
-                  >
-                    View Full Profile
-                  </button>
-                  {applicant.isQualified && (
-                    <>
-                      <button 
-                        className="btn btn-success"
-                        onClick={() => handleStatusUpdate(applicant.id, 'interview')}
-                      >
-                        Schedule Interview
-                      </button>
-                      <button 
-                        className="btn btn-outline"
-                        onClick={() => handleStatusUpdate(applicant.id, 'shortlisted')}
-                      >
-                        Shortlist
-                      </button>
-                    </>
-                  )}
-                  <button 
-                    className="btn btn-danger"
-                    onClick={() => handleStatusUpdate(applicant.id, 'rejected')}
-                  >
-                    Reject
-                  </button>
-                </div>
-              </div>
-            );
-          })}
+        <div className="card">
+          <h2>Job Applicants ({filteredApplicants.length})</h2>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Applicant</th>
+                  <th>Job Position</th>
+                  <th>Score</th>
+                  <th>Status</th>
+                  <th>GPA</th>
+                  <th>Experience</th>
+                  <th>Applied Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredApplicants.map(applicant => {
+                  const qualBadge = getQualificationBadge(applicant.qualificationScore);
+                  
+                  return (
+                    <tr key={applicant.id}>
+                      <td>
+                        <div>
+                          <strong>{applicant.studentName}</strong>
+                          <div className="text-muted" style={{ fontSize: '0.875rem' }}>
+                            {applicant.studentEmail}
+                          </div>
+                        </div>
+                      </td>
+                      <td>{applicant.jobTitle}</td>
+                      <td>
+                        <div style={{ 
+                          fontSize: '1.25rem', 
+                          fontWeight: 'bold', 
+                          color: applicant.isQualified ? 'var(--success-color)' : 'var(--warning-color)'
+                        }}>
+                          {applicant.qualificationScore}%
+                        </div>
+                      </td>
+                      <td>
+                        <span className={`badge ${qualBadge.class}`}>
+                          {qualBadge.text}
+                        </span>
+                      </td>
+                      <td>{applicant.academicPerformance?.gpa || applicant.academicPerformance?.grade || 'N/A'}</td>
+                      <td>{applicant.workExperience?.length || 0} positions</td>
+                      <td>
+                        {applicant.createdAt ? new Date(applicant.createdAt.seconds * 1000).toLocaleDateString() : 'N/A'}
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                          <button 
+                            className="btn btn-sm btn-primary"
+                            onClick={() => viewApplicantDetails(applicant)}
+                            title="View Full Profile"
+                          >
+                            View
+                          </button>
+                          {applicant.isQualified && (
+                            <button 
+                              className="btn btn-sm btn-success"
+                              onClick={() => handleStatusUpdate(applicant.id, 'interview')}
+                              title="Schedule Interview"
+                            >
+                              Interview
+                            </button>
+                          )}
+                          <button 
+                            className="btn btn-sm btn-danger"
+                            onClick={() => handleStatusUpdate(applicant.id, 'rejected')}
+                            title="Reject Application"
+                          >
+                            Reject
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
