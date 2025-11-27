@@ -10,7 +10,6 @@ import {
   where,
   orderBy,
   limit,
-  writeBatch,
   serverTimestamp
 } from 'firebase/firestore';
 import { db } from './firebase';
@@ -500,20 +499,22 @@ export const selectFinalAdmission = async (studentId, selectedAppId) => {
   }
   
   // Multiple admissions - reject others and promote from waiting lists
-  const batch = writeBatch(db);
   const waitlistPromotions = [];
   
+  // First, mark selected admission as confirmed
+  await updateDoc(selectedAppRef, {
+    finalAdmissionConfirmed: true,
+    confirmedAt: serverTimestamp()
+  });
+  
+  // Then, decline other acceptances one by one
   for (const appDoc of acceptedSnap.docs) {
-    if (appDoc.id === selectedAppId) {
-      // Mark selected admission as confirmed
-      batch.update(doc(db, 'applications', appDoc.id), {
-        finalAdmissionConfirmed: true,
-        confirmedAt: serverTimestamp()
-      });
-    } else {
+    if (appDoc.id !== selectedAppId) {
       // Reject other acceptances
       const otherApp = appDoc.data();
-      batch.update(doc(db, 'applications', appDoc.id), {
+      const otherAppRef = doc(db, 'applications', appDoc.id);
+      
+      await updateDoc(otherAppRef, {
         status: 'declined_by_student',
         declinedAt: serverTimestamp(),
         reason: 'Student selected another institution'
@@ -527,19 +528,22 @@ export const selectFinalAdmission = async (studentId, selectedAppId) => {
       
       // Create notification for declined institution
       if (otherApp.institutionId) {
-        await createNotification({
-          userId: otherApp.institutionId, // This would need institution user ID
-          type: 'student_declined',
-          title: 'Student Declined Admission',
-          message: `A student has declined their admission offer for ${otherApp.courseName}`,
-          link: '/manage-applications',
-          read: false
-        });
+        try {
+          await createNotification({
+            userId: otherApp.institutionId, // This would need institution user ID
+            type: 'student_declined',
+            title: 'Student Declined Admission',
+            message: `A student has declined their admission offer for ${otherApp.courseName}`,
+            link: '/manage-applications',
+            read: false
+          });
+        } catch (notifError) {
+          console.error('Error creating notification:', notifError);
+          // Continue even if notification fails
+        }
       }
     }
   }
-  
-  await batch.commit();
   
   // Promote students from waiting lists for declined institutions
   for (const promo of waitlistPromotions) {
