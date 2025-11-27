@@ -9,7 +9,6 @@ const CompanyDashboard = ({ user }) => {
   const [jobs, setJobs] = useState([]);
   const [applications, setApplications] = useState([]);
   const [qualifiedApplicants, setQualifiedApplicants] = useState([]);
-  const [loading, setLoading] = useState(true);
 
   const fetchData = async () => {
     try {
@@ -17,7 +16,6 @@ const CompanyDashboard = ({ user }) => {
       const companyId = user?.companyId || user?.uid;
       
       if (!companyId) {
-        setLoading(false);
         return;
       }
       
@@ -32,21 +30,26 @@ const CompanyDashboard = ({ user }) => {
       
       setJobs(jobsData);
 
-      // Fetch job applications
+      // Fetch job applications in parallel
       const appsRef = collection(db, 'jobApplications');
       const jobIds = jobsData.map(j => j.id);
       
       let allApplications = [];
       if (jobIds.length > 0) {
-        // Fetch applications for each job
-        for (const jobId of jobIds) {
-          const appQuery = query(appsRef, where('jobId', '==', jobId));
-          const appSnapshot = await getDocs(appQuery);
-          const apps = appSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          allApplications.push(...apps);
+        // Fetch all applications in parallel (max 10 at a time to avoid rate limits)
+        const batchSize = 10;
+        for (let i = 0; i < jobIds.length; i += batchSize) {
+          const batchIds = jobIds.slice(i, i + batchSize);
+          const batchPromises = batchIds.map(jobId => {
+            const appQuery = query(appsRef, where('jobId', '==', jobId));
+            return getDocs(appQuery);
+          });
+          
+          const batchResults = await Promise.all(batchPromises);
+          const batchApps = batchResults.flatMap(snapshot => 
+            snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+          );
+          allApplications.push(...batchApps);
         }
       }
       
@@ -55,11 +58,8 @@ const CompanyDashboard = ({ user }) => {
       // Filter qualified applicants (ready for interview)
       const qualified = allApplications.filter(app => app.status === 'qualified' || app.isQualified);
       setQualifiedApplicants(qualified);
-      
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching data:', error);
-      setLoading(false);
     }
   };
 
@@ -69,15 +69,6 @@ const CompanyDashboard = ({ user }) => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
-
-  if (loading) {
-    return (
-      <div className="container">
-        <div className="spinner"></div>
-        <p className="loading-text">Loading dashboard...</p>
-      </div>
-    );
-  }
 
   const qualificationRate = applications.length > 0 
     ? ((qualifiedApplicants.length / applications.length) * 100).toFixed(1) 
@@ -94,7 +85,7 @@ const CompanyDashboard = ({ user }) => {
           borderRadius: '20px'
         }}>
           <h1 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '2rem' }}>
-            Welcome back, {user.displayName}! 💼
+            Welcome back, {user?.displayName || 'Company Admin'}! 💼
           </h1>
           <p style={{ margin: 0, opacity: 0.95, fontSize: '1.1rem' }}>
             Manage your job postings and review applicants

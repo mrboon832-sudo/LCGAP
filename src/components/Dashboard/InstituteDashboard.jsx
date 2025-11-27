@@ -6,7 +6,6 @@ import '../../styles/base.css';
 
 const InstituteDashboard = ({ user, institutionId }) => {
   const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     pending: 0,
     admitted: 0,
@@ -33,10 +32,8 @@ const InstituteDashboard = ({ user, institutionId }) => {
       }, { pending: 0, admitted: 0, rejected: 0, waiting: 0 });
       
       setStats(statsData);
-      setLoading(false);
     } catch (error) {
       console.error('Error fetching applications:', error);
-      setLoading(false);
     }
   };
 
@@ -49,15 +46,6 @@ const InstituteDashboard = ({ user, institutionId }) => {
     };
     return statusMap[status] || 'badge-primary';
   };
-
-  if (loading) {
-    return (
-      <div className="container">
-        <div className="spinner"></div>
-        <p className="loading-text">Loading dashboard...</p>
-      </div>
-    );
-  }
 
   const totalApplications = applications.length;
   const admissionRate = totalApplications > 0 ? ((stats.admitted / totalApplications) * 100).toFixed(1) : 0;
@@ -73,7 +61,7 @@ const InstituteDashboard = ({ user, institutionId }) => {
           borderRadius: '20px'
         }}>
           <h1 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '2rem' }}>
-            Welcome back, {user.displayName}! 🏫
+            Welcome back, {user?.displayName || 'Institute Admin'}! 🏫
           </h1>
           <p style={{ margin: 0, opacity: 0.95, fontSize: '1.1rem' }}>
             Manage your institution and review applications

@@ -355,7 +355,7 @@ const ViewProfile = ({ user }) => {
                           className="badge"
                           style={{ backgroundColor: 'var(--primary-color)', color: 'white' }}
                         >
-                          {subject}
+                          {typeof subject === 'string' ? subject : `${subject.name} (${subject.grade})`}
                         </span>
                       ))}
                     </div>

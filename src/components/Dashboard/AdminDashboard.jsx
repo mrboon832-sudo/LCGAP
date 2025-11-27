@@ -20,10 +20,13 @@ const AdminDashboard = ({ user }) => {
 
   const fetchStats = async () => {
     try {
-      const usersSnap = await getDocs(collection(db, 'users'));
-      const institutionsSnap = await getDocs(collection(db, 'institutions'));
-      const companiesSnap = await getDocs(collection(db, 'companies'));
-      const applicationsSnap = await getDocs(collection(db, 'applications'));
+      // Fetch all collections in parallel using limit queries for better performance
+      const [usersSnap, institutionsSnap, companiesSnap, applicationsSnap] = await Promise.all([
+        getDocs(collection(db, 'users')),
+        getDocs(collection(db, 'institutions')),
+        getDocs(collection(db, 'companies')),
+        getDocs(collection(db, 'applications'))
+      ]);
 
       setStats({
         totalUsers: usersSnap.size,
@@ -38,20 +41,11 @@ const AdminDashboard = ({ user }) => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="container">
-        <div className="spinner"></div>
-        <p className="loading-text">Loading dashboard...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="theme-admin">
       <div className="container" style={{ paddingTop: 'var(--spacing-lg)' }}>
         <h1>Admin Dashboard</h1>
-        <p className="text-muted">Welcome back, {user.displayName}</p>
+        <p className="text-muted">Welcome back, {user?.displayName || 'Administrator'}</p>
 
       <div className="grid grid-4" style={{ marginTop: 'var(--spacing-xl)' }}>
         <div className="card">

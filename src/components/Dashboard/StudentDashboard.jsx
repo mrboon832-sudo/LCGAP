@@ -10,44 +10,64 @@ const StudentDashboard = ({ user }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchApplications();
+    if (user?.uid) {
+      fetchApplications();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user.uid]);
+  }, [user?.uid]);
 
   const fetchApplications = async () => {
+    if (!user?.uid) {
+      console.log('No user ID available');
+      setLoading(false);
+      return;
+    }
+    
     try {
       const [courseApps, jobApps] = await Promise.all([
         getStudentApplications(user.uid),
         getStudentJobApplications(user.uid)
       ]);
       
-      // Enrich applications with institution names
-      const enrichedApps = await Promise.all(
-        courseApps.map(async (app) => {
-          let institutionName = app.institutionName || '';
-          
-          // Fetch institution name if not in app data
-          if (!institutionName && app.institutionId) {
-            try {
-              const institution = await getInstitution(app.institutionId);
-              institutionName = institution?.name || app.institutionId;
-            } catch (err) {
-              console.error('Error fetching institution:', err);
-              institutionName = app.institutionId;
-            }
-          }
-          
-          return {
-            ...app,
-            institutionName,
-            courseName: app.courseName || app.courseId
-          };
-        })
-      );
-      
-      setApplications(enrichedApps);
+      // Set data immediately without waiting for institution enrichment
+      setLoading(false); // Show dashboard immediately
+      setApplications(courseApps.map(app => ({
+        ...app,
+        institutionName: app.institutionName || 'Loading...',
+        courseName: app.courseName || app.courseId
+      })));
       setJobApplications(jobApps);
-      setLoading(false);
+      
+      // Enrich with institution names in background if needed
+      const uniqueInstitutionIds = [...new Set(
+        courseApps
+          .filter(app => !app.institutionName && app.institutionId)
+          .map(app => app.institutionId)
+      )];
+      
+      if (uniqueInstitutionIds.length > 0) {
+        // Fetch all institutions in parallel
+        const institutions = await Promise.all(
+          uniqueInstitutionIds.map(async (instId) => {
+            try {
+              const inst = await getInstitution(instId);
+              return { id: instId, name: inst?.name || instId };
+            } catch (err) {
+              return { id: instId, name: instId };
+            }
+          })
+        );
+        
+        // Create lookup map
+        const instMap = Object.fromEntries(institutions.map(i => [i.id, i.name]));
+        
+        // Update applications with institution names
+        setApplications(courseApps.map(app => ({
+          ...app,
+          institutionName: app.institutionName || instMap[app.institutionId] || app.institutionId,
+          courseName: app.courseName || app.courseId
+        })));
+      }
     } catch (error) {
       console.error('Error fetching applications:', error);
       setLoading(false);
@@ -64,15 +84,6 @@ const StudentDashboard = ({ user }) => {
     return statusMap[status] || 'badge-primary';
   };
 
-  if (loading) {
-    return (
-      <div className="container">
-        <div className="spinner"></div>
-        <p className="loading-text">Loading your dashboard...</p>
-      </div>
-    );
-  }
-
   const admittedCount = applications.filter(a => a.status === 'admitted').length;
   const totalApplications = applications.length;
   const applicationProgress = totalApplications > 0 ? (admittedCount / totalApplications) * 100 : 0;
@@ -88,7 +99,7 @@ const StudentDashboard = ({ user }) => {
           borderRadius: '20px'
         }}>
           <h1 style={{ margin: 0, marginBottom: 'var(--spacing-sm)', fontSize: '2rem' }}>
-            Welcome back, {user.displayName}! 👋
+            Welcome back, {user?.displayName || 'Student'}! 👋
           </h1>
           <p style={{ margin: 0, opacity: 0.95, fontSize: '1.1rem' }}>
             Here's your progress overview
@@ -127,7 +138,7 @@ const StudentDashboard = ({ user }) => {
             </div>
             <div>
               <h3 style={{ color: 'var(--primary-color)', marginBottom: '0.25rem', fontSize: '2rem' }}>
-                {applications.length}
+                {loading ? '...' : applications.length}
               </h3>
               <p className="text-muted" style={{ margin: 0 }}>Course Applications</p>
             </div>
@@ -144,7 +155,7 @@ const StudentDashboard = ({ user }) => {
             </div>
             <div>
               <h3 style={{ color: '#10b981', marginBottom: '0.25rem', fontSize: '2rem' }}>
-                {admittedCount}
+                {loading ? '...' : admittedCount}
               </h3>
               <p className="text-muted" style={{ margin: 0 }}>Admissions</p>
             </div>
@@ -161,7 +172,7 @@ const StudentDashboard = ({ user }) => {
             </div>
             <div>
               <h3 style={{ color: '#f59e0b', marginBottom: '0.25rem', fontSize: '2rem' }}>
-                {jobApplications.length}
+                {loading ? '...' : jobApplications.length}
               </h3>
               <p className="text-muted" style={{ margin: 0 }}>Job Applications</p>
             </div>

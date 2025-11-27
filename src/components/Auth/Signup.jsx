@@ -132,6 +132,7 @@ const Signup = () => {
         profileData.profile.institutionName = formData.institutionName;
       }
 
+      // Wait for profile creation to complete
       await createUserProfile(userCredential.user.uid, profileData);
 
       if (!featureFlags.bypassEmailVerification) {

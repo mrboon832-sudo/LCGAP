@@ -15,6 +15,10 @@ import {
 } from 'firebase/firestore';
 import { db } from './firebase';
 
+// Simple in-memory cache for institutions
+const institutionCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 // User operations
 export const createUserProfile = async (uid, data) => {
   const userRef = doc(db, 'users', uid);
@@ -56,9 +60,21 @@ export const getInstitutions = async (limitCount = 50) => {
 };
 
 export const getInstitution = async (instId) => {
+  // Check cache first
+  const cached = institutionCache.get(instId);
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.data;
+  }
+  
+  // Fetch from Firestore
   const instRef = doc(db, 'institutions', instId);
   const instSnap = await getDoc(instRef);
-  return instSnap.exists() ? { id: instSnap.id, ...instSnap.data() } : null;
+  const result = instSnap.exists() ? { id: instSnap.id, ...instSnap.data() } : null;
+  
+  // Cache the result
+  institutionCache.set(instId, { data: result, timestamp: Date.now() });
+  
+  return result;
 };
 
 export const updateInstitution = async (instId, data) => {
@@ -306,6 +322,11 @@ export const applyToCourse = async (studentId, institutionId, courseId, applicat
 };
 
 export const getStudentApplications = async (studentId) => {
+  if (!studentId) {
+    console.error('getStudentApplications called with undefined studentId');
+    return [];
+  }
+  
   const q = query(
     collection(db, 'applications'),
     where('studentId', '==', studentId)
@@ -345,21 +366,9 @@ export const updateApplicationStatus = async (appId, status, options = {}) => {
   
   const appData = appSnap.data();
   
-  // If changing to 'accepted', check for existing final admission at THIS institution
-  if (status === 'accepted') {
-    // Check if student already has an accepted admission at this institution
-    const existingAcceptedQuery = query(
-      collection(db, 'applications'),
-      where('studentId', '==', appData.studentId),
-      where('institutionId', '==', appData.institutionId),
-      where('status', '==', 'accepted')
-    );
-    const existingAccepted = await getDocs(existingAcceptedQuery);
-    
-    if (!existingAccepted.empty) {
-      throw new Error('Student already has an accepted admission at this institution. Cannot admit the same student to multiple programs at one institution.');
-    }
-  }
+  // Note: Students can accept multiple admission offers
+  // They will select their final admission later via selectFinalAdmission
+  // Only check for restrictions when setting final admission status
   
   // Update the application status
   await updateDoc(appRef, {

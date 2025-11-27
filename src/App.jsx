@@ -70,19 +70,27 @@ function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // Fetch user profile from Firestore
+        setUser(firebaseUser);
+        setLoading(false); // Show UI immediately while profile loads
+        
+        // Fetch user profile from Firestore in background
         try {
           const profile = await getUserProfile(firebaseUser.uid);
-          setUserProfile(profile);
+          if (profile) {
+            setUserProfile(profile);
+          } else {
+            console.error('User profile not found in Firestore');
+            setUserProfile(null);
+          }
         } catch (error) {
           console.error('Error fetching user profile:', error);
+          setUserProfile(null);
         }
-        setUser(firebaseUser);
       } else {
         setUser(null);
         setUserProfile(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -119,7 +127,19 @@ function App() {
 
   const DashboardRouter = () => {
     if (!userProfile) {
-      return <LoadingFallback />;
+      return (
+        <div className="container" style={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          minHeight: '60vh',
+          flexDirection: 'column',
+          gap: '1rem'
+        }}>
+          <div className="spinner"></div>
+          <p className="loading-text">Loading your profile...</p>
+        </div>
+      );
     }
 
     switch (userProfile.role) {
