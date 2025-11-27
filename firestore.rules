@@ -16,7 +16,9 @@ service cloud.firestore {
     }
     
     function isAdmin() {
-      return request.auth != null && request.auth.token.admin == true;
+      return request.auth != null && 
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
     }
     
     // Users collection
@@ -48,10 +50,8 @@ service cloud.firestore {
       allow create: if isAuthenticated() 
         && request.resource.data.createdBy == request.auth.uid;
       
-      allow update: if isAdmin() 
+      allow update, delete: if isAdmin() 
         || (isAuthenticated() && resource.data.createdBy == request.auth.uid);
-      
-      allow delete: if isAdmin();
       
       // Faculties subcollection
       match /faculties/{facultyId} {
@@ -96,10 +96,8 @@ service cloud.firestore {
       allow create: if isAuthenticated() 
         && request.resource.data.createdBy == request.auth.uid;
       
-      allow update: if isAdmin() 
+      allow update, delete: if isAdmin() 
         || (isAuthenticated() && resource.data.createdBy == request.auth.uid);
-      
-      allow delete: if isAdmin();
     }
     
     // Jobs collection
