@@ -95,64 +95,48 @@ const InstitutionList = () => {
           </div>
         </div>
       ) : (
-        <div className="grid grid-2" style={{ marginTop: 'var(--spacing-lg)', gap: 'var(--spacing-lg)' }}>
-          {filteredInstitutions.map((institution) => (
-            <div 
-              key={institution.id} 
-              className="card shadow-md hover-lift transition-all" 
-              style={{
-                border: '1px solid #e5e7eb',
-                borderRadius: '16px',
-                overflow: 'hidden'
-              }}
-            >
-              <div style={{
-                background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-                padding: 'var(--spacing-lg)',
-                color: 'white'
-              }}>
-                <h3 style={{ margin: 0, fontSize: '1.3rem', color: 'white' }}>{institution.name}</h3>
-              </div>
-              <div style={{ padding: 'var(--spacing-lg)' }}>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 'var(--spacing-sm)',
-                  marginBottom: 'var(--spacing-md)',
-                  color: 'var(--text-color)',
-                  fontSize: '0.95rem'
-                }}>
-                  <span>📍</span>
-                  <span>{institution.location || 'Location not specified'}</span>
-                </div>
-                <p style={{ 
-                  color: 'var(--text-color)',
-                  lineHeight: 1.6,
-                  marginBottom: 'var(--spacing-lg)',
-                  fontSize: '0.95rem'
-                }}>
-                  {institution.description?.substring(0, 150) || 'No description available'}
-                  {institution.description?.length > 150 ? '...' : ''}
-                </p>
-                <div className="flex gap-md" style={{ marginTop: 'var(--spacing-lg)' }}>
-                  <Link
-                    to={`/institutions/${institution.id}`}
-                    className="btn btn-primary btn-sm hover-lift transition-all"
-                    style={{ flex: 1, textAlign: 'center' }}
-                  >
-                    📋 View Details
-                  </Link>
-                  <Link
-                    to={`/institutions/${institution.id}/apply`}
-                    className="btn btn-outline btn-sm hover-lift transition-all"
-                    style={{ flex: 1, textAlign: 'center' }}
-                  >
-                    ✏️ Apply Now
-                  </Link>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="card shadow-md" style={{ marginTop: 'var(--spacing-lg)' }}>
+          <h2>Institutions ({filteredInstitutions.length})</h2>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Institution Name</th>
+                  <th>Location</th>
+                  <th>Description</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInstitutions.map((institution) => (
+                  <tr key={institution.id}>
+                    <td><strong>{institution.name}</strong></td>
+                    <td>📍 {institution.location || 'Location not specified'}</td>
+                    <td>
+                      {institution.description?.substring(0, 100) || 'No description available'}
+                      {institution.description?.length > 100 ? '...' : ''}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <Link
+                          to={`/institutions/${institution.id}`}
+                          className="btn btn-sm btn-primary"
+                        >
+                          View
+                        </Link>
+                        <Link
+                          to={`/institutions/${institution.id}/apply`}
+                          className="btn btn-sm btn-success"
+                        >
+                          Apply
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       <Footer />

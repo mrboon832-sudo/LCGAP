@@ -153,105 +153,70 @@ const JobsPage = ({ user }) => {
           </div>
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: 'var(--spacing-lg)' }}>
-          {filteredJobs.map(job => (
-            <div 
-              key={job.id} 
-              className="card shadow-md hover-scale-sm transition-all" 
-              style={{
-                border: '1px solid #e5e7eb',
-                borderRadius: '16px',
-                padding: 'var(--spacing-xl)'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 'var(--spacing-md)' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-sm)', marginBottom: 'var(--spacing-xs)' }}>
-                    <div className="icon-badge" style={{ width: '40px', height: '40px', fontSize: '1.2rem' }}>
-                      💼
-                    </div>
-                    <h3 style={{ margin: 0 }}>{job.title}</h3>
-                  </div>
-                  <p className="text-muted" style={{ marginBottom: 'var(--spacing-sm)', marginLeft: '52px' }}>
-                    🏢 {job.companyName || 'Company'}
-                  </p>
-                  <div style={{ marginLeft: '52px' }}>
-                    <span className="badge badge-primary">{job.type || 'Full-time'}</span>
-                  </div>
-                </div>
-                {job.salary && (
-                  <div style={{ 
-                    textAlign: 'right',
-                    padding: 'var(--spacing-sm) var(--spacing-md)',
-                    backgroundColor: '#f0fdf4',
-                    borderRadius: '12px'
-                  }}>
-                    <p style={{ 
-                      fontWeight: 'bold', 
-                      color: '#059669',
-                      fontSize: '1.1rem',
-                      margin: 0
-                    }}>
-                      {typeof job.salary === 'object' && job.salary !== null
-                        ? `${job.salary.currency || 'LSL'} ${job.salary.min || 0} - ${job.salary.max || 0}`
-                        : (typeof job.salary === 'string' ? job.salary : '')}
-                    </p>
-                    <p className="text-muted" style={{ fontSize: '0.75rem', margin: 0 }}>per month</p>
-                  </div>
-                )}
-              </div>
-
-              <p style={{ 
-                marginBottom: 'var(--spacing-md)', 
-                color: '#475569',
-                lineHeight: 1.6,
-                borderLeft: '3px solid var(--primary-color)',
-                paddingLeft: 'var(--spacing-md)'
-              }}>
-                {job.description?.substring(0, 200)}...
-              </p>
-
-              <div style={{ 
-                display: 'flex', 
-                gap: 'var(--spacing-lg)', 
-                flexWrap: 'wrap', 
-                marginBottom: 'var(--spacing-lg)',
-                padding: 'var(--spacing-md)',
-                backgroundColor: '#f8fafc',
-                borderRadius: '8px'
-              }}>
-                {job.location && (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.875rem' }}>
-                    📍 {job.location}
-                  </span>
-                )}
-                {job.deadline && (
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '5px', fontSize: '0.875rem' }}>
-                    📅 Deadline: {new Date(job.deadline).toLocaleDateString()}
-                  </span>
-                )}
-              </div>
-
-              <div style={{ display: 'flex', gap: 'var(--spacing-sm)' }}>
-                <Link 
-                  to={`/jobs/${job.id}`} 
-                  className="btn btn-primary hover-lift transition-all"
-                  style={{ flex: 1 }}
-                >
-                  📋 View Details
-                </Link>
-                {user?.role === 'student' && (
-                  <Link 
-                    to={`/jobs/${job.id}/apply`} 
-                    className="btn btn-outline hover-lift transition-all"
-                    style={{ flex: 1 }}
-                  >
-                    ✏️ Apply Now
-                  </Link>
-                )}
-              </div>
-            </div>
-          ))}
+        <div className="card">
+          <h2>Available Jobs ({filteredJobs.length})</h2>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Job Title</th>
+                  <th>Company</th>
+                  <th>Type</th>
+                  <th>Location</th>
+                  <th>Salary</th>
+                  <th>Deadline</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredJobs.map(job => (
+                  <tr key={job.id}>
+                    <td>
+                      <strong>{job.title}</strong>
+                      <div className="text-muted" style={{ fontSize: '0.875rem', marginTop: '0.25rem' }}>
+                        {job.description?.substring(0, 80)}...
+                      </div>
+                    </td>
+                    <td>{job.companyName || 'Company'}</td>
+                    <td>
+                      <span className="badge badge-primary">{job.type || 'Full-time'}</span>
+                    </td>
+                    <td>{job.location || 'N/A'}</td>
+                    <td>
+                      {job.salary ? (
+                        <div style={{ fontWeight: '600', color: '#059669' }}>
+                          {typeof job.salary === 'object' && job.salary !== null
+                            ? `${job.salary.currency || 'LSL'} ${job.salary.min || 0}-${job.salary.max || 0}`
+                            : (typeof job.salary === 'string' ? job.salary : 'N/A')}
+                        </div>
+                      ) : 'N/A'}
+                    </td>
+                    <td>
+                      {job.deadline ? new Date(job.deadline).toLocaleDateString() : 'N/A'}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <Link 
+                          to={`/jobs/${job.id}`} 
+                          className="btn btn-sm btn-primary"
+                        >
+                          View
+                        </Link>
+                        {user?.role === 'student' && (
+                          <Link 
+                            to={`/jobs/${job.id}/apply`} 
+                            className="btn btn-sm btn-success"
+                          >
+                            Apply
+                          </Link>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       </div>

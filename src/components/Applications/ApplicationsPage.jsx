@@ -463,116 +463,104 @@ const ApplicationsPage = ({ user }) => {
           )}
         </div>
       ) : (
-        <div style={{ display: 'grid', gap: 'var(--spacing-lg)' }}>
-          {filteredApplications.map(app => (
-            <div key={app.id} className="card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: 'var(--spacing-md)' }}>
-                <div>
-                  {/* Display type badge */}
-                  <span style={{
-                    display: 'inline-block',
-                    padding: '2px 8px',
-                    borderRadius: '4px',
-                    fontSize: '0.75rem',
-                    fontWeight: 600,
-                    marginBottom: 'var(--spacing-xs)',
-                    backgroundColor: app.type === 'job' ? 'var(--success-color)' : 'var(--primary-color)',
-                    color: 'white'
-                  }}>
-                    {app.type === 'job' ? 'JOB' : 'COURSE'}
-                  </span>
-                  <h3 style={{ marginBottom: 'var(--spacing-xs)' }}>
-                    {app.type === 'job' ? (app.jobTitle || 'Job Application') : (app.courseName || 'Course Application')}
-                  </h3>
-                  <p className="text-muted" style={{ marginBottom: 'var(--spacing-xs)' }}>
-                    {app.type === 'job' ? (app.companyName || 'Company') : (app.institutionName || 'Institution')}
-                  </p>
-                  {user.role !== 'student' && (
-                    <p className="text-muted" style={{ fontSize: '0.875rem' }}>
-                      Applicant: {app.studentName || app.studentEmail}
-                    </p>
-                  )}
-                </div>
-                <span className={getStatusBadge(app.status)}>
-                  {app.status?.toUpperCase()}
-                </span>
-              </div>
-
-              <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
-                  Applied: {app.appliedAt ? new Date(app.appliedAt.seconds * 1000).toLocaleDateString() : (app.createdAt ? new Date(app.createdAt.seconds * 1000).toLocaleDateString() : 'N/A')}
-                </p>
-              </div>
-
-              {app.type === 'course' && app.motivation && (
-                <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                  <strong>Motivation:</strong>
-                  <p style={{ marginTop: 'var(--spacing-xs)', color: 'var(--text-muted)' }}>
-                    {app.motivation.substring(0, 150)}...
-                  </p>
-                </div>
-              )}
-
-              {app.type === 'job' && app.coverLetter && (
-                <div style={{ marginBottom: 'var(--spacing-md)' }}>
-                  <strong>Cover Letter:</strong>
-                  <p style={{ marginTop: 'var(--spacing-xs)', color: 'var(--text-muted)' }}>
-                    {app.coverLetter.substring(0, 150)}...
-                  </p>
-                </div>
-              )}
-
-              <div style={{ display: 'flex', gap: 'var(--spacing-sm)', flexWrap: 'wrap' }}>
-                {user.role === 'institute' && app.status === 'pending' && (
-                  <>
-                    <button className="btn btn-success">Accept</button>
-                    <button className="btn btn-danger">Reject</button>
-                  </>
-                )}
-                {user.role === 'student' && app.type === 'course' && app.status === 'accepted' && !app.finalAdmissionConfirmed && (
-                  <>
-                    {applications.filter(a => a.status === 'accepted').length > 1 ? (
-                      <button 
-                        className="btn btn-primary"
-                        onClick={() => handleSelectFinalAdmission(app.id)}
-                        disabled={processingApp === app.id}
-                        style={{ fontWeight: 600 }}
-                      >
-                        {processingApp === app.id ? 'Processing...' : '✓ Select as Final Admission'}
-                      </button>
-                    ) : (
-                      <button 
-                        className="btn btn-success"
-                        onClick={() => handleAcceptAdmission(app.id)}
-                        disabled={processingApp === app.id}
-                      >
-                        {processingApp === app.id ? 'Processing...' : 'Accept Admission'}
-                      </button>
+        <div className="card">
+          <h2>Applications ({filteredApplications.length})</h2>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>Type</th>
+                  <th>Title</th>
+                  <th>Organization</th>
+                  {user.role !== 'student' && <th>Applicant</th>}
+                  <th>Status</th>
+                  <th>Applied Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredApplications.map(app => (
+                  <tr key={app.id}>
+                    <td>
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        fontSize: '0.75rem',
+                        fontWeight: 600,
+                        backgroundColor: app.type === 'job' ? 'var(--success-color)' : 'var(--primary-color)',
+                        color: 'white'
+                      }}>
+                        {app.type === 'job' ? 'JOB' : 'COURSE'}
+                      </span>
+                    </td>
+                    <td>
+                      <strong>{app.type === 'job' ? (app.jobTitle || 'Job Application') : (app.courseName || 'Course Application')}</strong>
+                      {app.promotedFromWaiting && (
+                        <div style={{
+                          fontSize: '0.75rem',
+                          color: 'var(--info-color)',
+                          marginTop: '0.25rem'
+                        }}>
+                          ⬆️ Promoted from Waiting List
+                        </div>
+                      )}
+                    </td>
+                    <td>{app.type === 'job' ? (app.companyName || 'Company') : (app.institutionName || 'Institution')}</td>
+                    {user.role !== 'student' && (
+                      <td>{app.studentName || app.studentEmail}</td>
                     )}
-                    <button 
-                      className="btn btn-danger"
-                      onClick={() => handleRejectAdmission(app.id)}
-                      disabled={processingApp === app.id}
-                    >
-                      {processingApp === app.id ? 'Processing...' : 'Decline Offer'}
-                    </button>
-                  </>
-                )}
-                {app.promotedFromWaiting && (
-                  <span style={{
-                    padding: '4px 8px',
-                    borderRadius: '4px',
-                    fontSize: '0.75rem',
-                    backgroundColor: 'var(--info-color)',
-                    color: 'white',
-                    alignSelf: 'center'
-                  }}>
-                    Promoted from Waiting List
-                  </span>
-                )}
-              </div>
-            </div>
-          ))}
+                    <td>
+                      <span className={getStatusBadge(app.status)}>
+                        {app.status?.toUpperCase()}
+                      </span>
+                    </td>
+                    <td>
+                      {app.appliedAt ? new Date(app.appliedAt.seconds * 1000).toLocaleDateString() : (app.createdAt ? new Date(app.createdAt.seconds * 1000).toLocaleDateString() : 'N/A')}
+                    </td>
+                    <td>
+                      <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                        {user.role === 'institute' && app.status === 'pending' && (
+                          <>
+                            <button className="btn btn-sm btn-success">Accept</button>
+                            <button className="btn btn-sm btn-danger">Reject</button>
+                          </>
+                        )}
+                        {user.role === 'student' && app.type === 'course' && app.status === 'accepted' && !app.finalAdmissionConfirmed && (
+                          <>
+                            {applications.filter(a => a.status === 'accepted').length > 1 ? (
+                              <button 
+                                className="btn btn-sm btn-primary"
+                                onClick={() => handleSelectFinalAdmission(app.id)}
+                                disabled={processingApp === app.id}
+                              >
+                                {processingApp === app.id ? 'Processing...' : 'Select Final'}
+                              </button>
+                            ) : (
+                              <button 
+                                className="btn btn-sm btn-success"
+                                onClick={() => handleAcceptAdmission(app.id)}
+                                disabled={processingApp === app.id}
+                              >
+                                {processingApp === app.id ? 'Processing...' : 'Accept'}
+                              </button>
+                            )}
+                            <button 
+                              className="btn btn-sm btn-danger"
+                              onClick={() => handleRejectAdmission(app.id)}
+                              disabled={processingApp === app.id}
+                            >
+                              {processingApp === app.id ? 'Processing...' : 'Decline'}
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
       </div>
